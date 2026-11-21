@@ -1,0 +1,124 @@
+{
+  "version": 23,
+  "updated_at": "2026-11-21T17:26:01.521Z",
+  "staff": [
+    {
+      "id": "usr_admin_master",
+      "email": "admin@gmail.com",
+      "password": "Admin@123",
+      "full_name": "System Administrator",
+      "role": "admin",
+      "is_active": true,
+      "created_at": "2026-11-21T17:00:00.000Z"
+    },
+    {
+      "id": "usr_staff_gate",
+      "email": "staff@fleetgate.com",
+      "password": "Staff@123",
+      "full_name": "Gate Security Staff",
+      "role": "staff",
+      "is_active": true,
+      "created_at": "2026-11-21T17:00:00.000Z"
+    }
+  ],
+  "movements": [
+    {
+      "id": "mov_1795281954740_vp3le",
+      "plate_number": "TN 13 DF 5290",
+      "vehicle_number": "TN 13 DF 5290",
+      "in_time": "2026-11-21T17:25:54.740Z",
+      "out_time": "2026-11-21T17:26:01.521Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 3,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:25:54.740Z",
+      "updated_at": "2026-11-21T17:26:01.521Z"
+    },
+    {
+      "id": "mov_1795281884403_f5c02",
+      "plate_number": "TN 13 DF 5290",
+      "vehicle_number": "TN 13 DF 5290",
+      "in_time": "2026-11-21T17:24:44.403Z",
+      "out_time": "2026-11-21T17:24:50.548Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 2,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:24:44.403Z",
+      "updated_at": "2026-11-21T17:24:50.548Z"
+    },
+    {
+      "id": "mov_1795281728698_dlivs",
+      "plate_number": "TN 13 DF 5290",
+      "vehicle_number": "TN 13 DF 5290",
+      "in_time": "2026-11-21T17:22:08.698Z",
+      "out_time": "2026-11-21T17:22:29.658Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 1,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:22:08.698Z",
+      "updated_at": "2026-11-21T17:22:29.658Z"
+    },
+    {
+      "id": "mov_1795281634160_daw7s",
+      "plate_number": "TN 20 CM 3456",
+      "vehicle_number": "TN 20 CM 3456",
+      "in_time": "2026-11-21T17:20:34.160Z",
+      "out_time": "2026-11-21T17:20:45.183Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 2,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:20:34.160Z",
+      "updated_at": "2026-11-21T17:20:45.183Z"
+    },
+    {
+      "id": "mov_1795281601073_3lymk",
+      "plate_number": "TN 20 CM 3456",
+      "vehicle_number": "TN 20 CM 3456",
+      "in_time": "2026-11-21T17:20:01.073Z",
+      "out_time": "2026-11-21T17:20:10.846Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 1,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:20:01.073Z",
+      "updated_at": "2026-11-21T17:20:10.846Z"
+    },
+    {
+      "id": "mov_1795281547280_ngyf7",
+      "plate_number": "TN 21 CD 2345",
+      "vehicle_number": "TN 21 CD 2345",
+      "in_time": "2026-11-21T17:19:07.280Z",
+      "out_time": "2026-11-21T17:19:16.819Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 2,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:19:07.280Z",
+      "updated_at": "2026-11-21T17:19:16.819Z"
+    },
+    {
+      "id": "mov_1795281507802_k9qt5",
+      "plate_number": "TN 21 CD 2345",
+      "vehicle_number": "TN 21 CD 2345",
+      "in_time": "2026-11-21T17:18:27.802Z",
+      "out_time": "2026-11-21T17:18:43.948Z",
+      "is_active_inside": false,
+      "status": "OUT",
+      "remarks": "",
+      "trip_number": 1,
+      "created_by": "Gate Security Staff",
+      "created_at": "2026-11-21T17:18:27.802Z",
+      "updated_at": "2026-11-21T17:18:43.948Z"
+    }
+  ]
+}

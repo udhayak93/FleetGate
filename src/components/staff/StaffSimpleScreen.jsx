@@ -3,12 +3,21 @@ import { useLorryData } from '../../context/LorryDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { format, isToday } from 'date-fns';
 import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
-import { Lock, Shield, X, Eye, EyeOff, QrCode } from 'lucide-react';
+import { Lock, Shield, X, Eye, EyeOff, QrCode, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
 import { AllAccessQRModal } from '../common/AllAccessQRModal';
 
 export const StaffSimpleScreen = () => {
-  const { movements, checkLorryInsideStatus, getLorryTripInfo, recordEntry, recordExit } = useLorryData();
+  const { 
+    movements, 
+    checkLorryInsideStatus, 
+    getLorryTripInfo, 
+    recordEntry, 
+    recordExit,
+    isSyncing,
+    syncStatus,
+    refreshData 
+  } = useLorryData();
   const { login, logout, profile, isAdmin } = useAuth();
 
   const [lorryNumber, setLorryNumber] = useState('');
@@ -18,9 +27,8 @@ export const StaffSimpleScreen = () => {
   const [lastSavedInTime, setLastSavedInTime] = useState(null);
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'MULTI_TRIP' | 'INSIDE'
 
-  // State for Check-Out (OUT) Modal with optional exit remarks
+  // State for Check-Out (OUT) Modal
   const [exitModalMovement, setExitModalMovement] = useState(null);
-  const [exitRemarks, setExitRemarks] = useState('');
 
   // Admin Login Modal State (Staff requires NO login, only Admin needs login)
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -168,14 +176,13 @@ export const StaffSimpleScreen = () => {
     }
   };
 
-  // Open OUT modal for optional remarks
+  // Open OUT modal
   const handleStartRecordOut = (movement) => {
     setErrorMsg(null);
     setExitModalMovement(movement);
-    setExitRemarks('');
   };
 
-  // Confirm Lorry OUT using exact mobile time + optional exit remarks
+  // Confirm Lorry OUT using exact mobile time
   const handleConfirmRecordOut = async () => {
     if (!exitModalMovement) return;
 
@@ -189,8 +196,6 @@ export const StaffSimpleScreen = () => {
       movementId: exitModalMovement.id,
       exitGate: 'Main Gate',
       exitTime: exactMobileExitIso,
-      exitRemarks: exitRemarks.trim(),
-      exitNotes: exitRemarks.trim()
     });
     setIsSubmitting(false);
 
@@ -198,7 +203,6 @@ export const StaffSimpleScreen = () => {
       setErrorMsg(res.error || 'Failed to record exit.');
     } else {
       setExitModalMovement(null);
-      setExitRemarks('');
     }
   };
 
@@ -276,15 +280,34 @@ export const StaffSimpleScreen = () => {
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 space-y-4">
 
-        {/* 1-Day Access Notice */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2 text-xs flex items-center justify-between text-slate-400">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Staff Screen: <strong>Direct Entry (No Login Required)</strong></span>
+        {/* Real-Time Shared Cloud Sync Status Bar */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between text-slate-300 shadow-sm">
+          <div className="flex items-center space-x-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${syncStatus === 'live' ? 'bg-emerald-400 animate-pulse' : syncStatus === 'syncing' ? 'bg-amber-400 animate-spin' : 'bg-rose-500'}`} />
+            <span className="font-bold text-xs">
+              {syncStatus === 'live' ? (
+                <span className="text-emerald-400 flex items-center">
+                  Shared Cloud Database Active <span className="ml-1 text-[10px] text-slate-400 font-normal hidden sm:inline">(Auto-syncs all mobile devices)</span>
+                </span>
+              ) : syncStatus === 'syncing' ? (
+                <span className="text-amber-400">Syncing with Cloud...</span>
+              ) : (
+                <span className="text-rose-400">Offline Cache</span>
+              )}
+            </span>
           </div>
-          <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-            Admin console requires login
-          </span>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => refreshData()}
+              disabled={isSyncing}
+              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700 text-[11px] transition active:scale-95"
+              title="Sync now across all phones"
+            >
+              <RefreshCw className={`w-3 h-3 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Success Notice: Display IN Time, Trip Label & optional Remarks immediately after saving */}
@@ -684,22 +707,6 @@ export const StaffSimpleScreen = () => {
               )}
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Exit Remarks
-                </label>
-                <span className="text-[10px] text-slate-500 font-semibold">Optional</span>
-              </div>
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g. Unloaded / Material verified / OK (Optional)"
-                value={exitRemarks}
-                onChange={(e) => setExitRemarks(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
 
             <div className="flex space-x-2 pt-1">
               <button

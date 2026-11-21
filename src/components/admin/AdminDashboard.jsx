@@ -18,12 +18,23 @@ import {
   Eye, 
   RotateCcw,
   QrCode,
+  RefreshCw,
   X
 } from 'lucide-react';
 
 export const AdminDashboard = ({ onOpenStaffView }) => {
   const { profile, logout, allStaff, createStaffAccount, updateStaffAccount, deleteStaffAccount } = useAuth();
-  const { movements, lorries, updateMovement, deleteMovement, clearDailyData, resetAllRecords } = useLorryData();
+  const { 
+    movements, 
+    lorries, 
+    updateMovement, 
+    deleteMovement, 
+    clearDailyData, 
+    resetAllRecords,
+    isSyncing,
+    syncStatus,
+    refreshData
+  } = useLorryData();
 
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'staff'
 
@@ -250,6 +261,15 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
+          <button
+            onClick={() => refreshData()}
+            disabled={isSyncing}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition"
+            title="Refresh shared database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+          </button>
           <button
             onClick={() => setIsQRModalOpen(true)}
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition shadow-sm"

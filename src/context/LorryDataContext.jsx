@@ -1,148 +1,168 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase, getSupabaseConfig } from '../lib/supabase';
-import { INITIAL_LORRIES, INITIAL_MOVEMENTS } from '../data/mockData';
 import { useAuth } from './AuthContext';
 import { isToday } from 'date-fns';
 import { formatLorryNumber } from '../utils/vehicleFormatter';
 
 const LorryDataContext = createContext(undefined);
 
-// Clean live private keys - no dummy data
-const LOCAL_STORAGE_LORRIES_KEY = 'ltp_live_private_lorries';
-const LOCAL_STORAGE_MOVEMENTS_KEY = 'ltp_live_private_movements';
-
-// Clear legacy dummy cache keys from previous tests so clean state is guaranteed
-try {
-  [
-    'ltp_local_lorries_v3',
-    'ltp_local_movements_v3',
-    'ltp_local_lorries_v2',
-    'ltp_local_movements_v2',
-    'ltp_local_lorries',
-    'ltp_local_movements'
-  ].forEach(k => localStorage.removeItem(k));
-} catch (_) {}
+const LOCAL_CACHE_KEY = 'fleetgate_cached_movements';
 
 export const LorryDataProvider = ({ children }) => {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, authToken } = useAuth();
   const { isConfigured } = getSupabaseConfig();
 
-  const [lorries, setLorries] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_LORRIES_KEY);
-      return saved ? JSON.parse(saved) : INITIAL_LORRIES;
-    } catch {
-      return INITIAL_LORRIES;
-    }
-  });
-
+  // Primary shared movements state
   const [movements, setMovements] = useState(() => {
     try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_MOVEMENTS_KEY);
-      return saved ? JSON.parse(saved) : INITIAL_MOVEMENTS;
+      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+      return cached ? JSON.parse(cached) : [];
     } catch {
-      return INITIAL_MOVEMENTS;
+      return [];
     }
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('live'); // 'live' | 'syncing' | 'offline' | 'error'
+  const [lastSyncTime, setLastSyncTime] = useState(new Date());
 
+  // Cache locally as an offline fallback
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_LORRIES_KEY, JSON.stringify(lorries));
-  }, [lorries]);
-
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_MOVEMENTS_KEY, JSON.stringify(movements));
+    try {
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(movements));
+    } catch (_) {}
   }, [movements]);
 
+  // ============================================================================
+  // SHARED CLOUD FETCH & SYNC
+  // ============================================================================
   const refreshData = useCallback(async () => {
-    if (!isConfigured || !profile) return;
     setIsSyncing(true);
 
     try {
-      const { data: lorriesData, error: lorriesError } = await supabase
-        .from('lorries')
-        .select('*')
-        .order('plate_number', { ascending: true });
+      // 1. Fetch from shared backend API (synchronized across all devices)
+      const res = await fetch('/api/movements');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.movements)) {
+          // Normalize server fields to match UI expectations
+          const normalized = data.movements.map(m => ({
+            ...m,
+            // Ensure compatibility with existing component prop names
+            entry_time: m.in_time,
+            exit_time: m.out_time,
+            remarks: m.remarks || '',
+            entry_notes: m.remarks || '',
+            exit_notes: m.remarks || '',
+            plate_number: m.plate_number || m.vehicle_number,
+            status: m.is_active_inside ? 'IN' : 'OUT'
+          }));
 
-      if (!lorriesError && lorriesData) {
-        setLorries(lorriesData);
+          setMovements(normalized);
+          setSyncStatus('live');
+          setLastSyncTime(new Date());
+          setIsSyncing(false);
+          return;
+        }
       }
-
-      let movQuery = supabase
-        .from('lorry_movements')
-        .select('*')
-        .order('entry_time', { ascending: false });
-
-      // Staff security rule: Staff can only access 1 day of records (today)
-      // Older historical records are restricted and can only be accessed/handled by Admin
-      if (!isAdmin) {
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-        movQuery = movQuery.or(`entry_time.gte.${startOfToday.toISOString()},is_active_inside.eq.true`);
-      }
-
-      const { data: movData, error: movError } = await movQuery;
-
-      if (!movError && movData) {
-        setMovements(movData);
-      }
-    } catch (err) {
-      console.error('Error refreshing from Supabase:', err);
-    } finally {
-      setIsSyncing(false);
-      setIsLoading(false);
+    } catch (apiErr) {
+      console.warn('[Sync] API fetch warning, trying fallback:', apiErr.message);
     }
-  }, [isConfigured, profile, isAdmin]);
 
+    // 2. Fallback to Supabase if configured
+    if (isConfigured) {
+      try {
+        const { data: supaData, error: supaError } = await supabase
+          .from('lorry_movements')
+          .select('*')
+          .order('entry_time', { ascending: false });
+
+        if (!supaError && supaData) {
+          setMovements(supaData);
+          setSyncStatus('live');
+          setLastSyncTime(new Date());
+          setIsSyncing(false);
+          return;
+        }
+      } catch (err) {
+        console.error('[Sync] Supabase fetch error:', err);
+      }
+    }
+
+    // If both fail, mark offline
+    setSyncStatus('offline');
+    setIsSyncing(false);
+  }, [isConfigured]);
+
+  // Initial load
   useEffect(() => {
-    if (isConfigured && profile) {
-      refreshData();
+    refreshData();
+  }, [refreshData]);
 
-      const channel = supabase
-        .channel('lorry_movements_live')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'lorry_movements' },
-          () => {
+  // ============================================================================
+  // REAL-TIME SERVER-SENT EVENTS (SSE) + PERIODIC POLLING
+  // ============================================================================
+  useEffect(() => {
+    let eventSource = null;
+    let pollInterval = null;
+
+    // Connect to SSE stream for instant cross-device updates (< 100ms)
+    try {
+      eventSource = new EventSource('/api/events');
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'SYNC') {
+            console.log('[SSE] Received sync broadcast from another device. Updating...');
             refreshData();
           }
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'lorries' },
-          () => {
-            refreshData();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
+        } catch (_) {}
       };
-    }
-  }, [isConfigured, profile, refreshData]);
 
+      eventSource.onerror = () => {
+        // SSE disconnected, fallback to polling
+        if (eventSource) eventSource.close();
+      };
+    } catch (sseErr) {
+      console.warn('SSE not supported on this client, using polling:', sseErr);
+    }
+
+    // Safety polling every 3 seconds to guarantee 100% sync on all mobile devices
+    pollInterval = setInterval(() => {
+      refreshData();
+    }, 3000);
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [refreshData]);
+
+  // ============================================================================
+  // DERIVED STATE & METRICS
+  // ============================================================================
   const activeLorries = useMemo(() => {
-    return movements.filter(m => m.is_active_inside && m.status === 'IN');
+    return movements.filter(m => m.is_active_inside);
   }, [movements]);
 
+  // Check if a lorry is currently inside (Prevent Duplicate IN)
   const checkLorryInsideStatus = useCallback((plateNumber) => {
     const raw = (plateNumber || '').trim().toUpperCase();
     const compact = raw.replace(/\s+/g, '');
     if (!compact) return { isInside: false };
 
     const active = movements.find(
-      m => (m.plate_number || '').toUpperCase().replace(/\s+/g, '') === compact && m.is_active_inside && m.status === 'IN'
+      m => (m.plate_number || '').toUpperCase().replace(/\s+/g, '') === compact && m.is_active_inside
     );
+
     return {
       isInside: Boolean(active),
       activeMovement: active
     };
   }, [movements]);
 
-  // Check trip history for a lorry to intimidate multi-trip visits (e.g. 2nd Trip, 3rd Trip)
+  // Calculate trip count today for intimating 2nd trip, 3rd trip
   const getLorryTripInfo = useCallback((plateNumber) => {
     const raw = (plateNumber || '').trim().toUpperCase();
     const compact = raw.replace(/\s+/g, '');
@@ -150,9 +170,10 @@ export const LorryDataProvider = ({ children }) => {
       return { totalTrips: 0, nextTripNumber: 1, isReturning: false, previousMovements: [] };
     }
 
-    const matched = movements.filter(
-      m => (m.plate_number || '').toUpperCase().replace(/\s+/g, '') === compact
-    );
+    const matched = movements.filter(m => {
+      const p = (m.plate_number || '').toUpperCase().replace(/\s+/g, '');
+      return p === compact && (isToday(new Date(m.in_time || m.entry_time)));
+    });
 
     const totalTrips = matched.length;
     const nextTripNumber = totalTrips + 1;
@@ -166,480 +187,258 @@ export const LorryDataProvider = ({ children }) => {
     };
   }, [movements]);
 
+  // Stats
   const stats = useMemo(() => {
     const inside_now = activeLorries.length;
     let today_in = 0;
     let today_out = 0;
-    let totalCompletedMinutes = 0;
-    let completedCount = 0;
 
+    const counts = {};
     movements.forEach(m => {
-      const entryDate = new Date(m.entry_time);
+      const entryDate = new Date(m.in_time || m.entry_time);
       if (isToday(entryDate)) {
         today_in++;
+        const c = (m.plate_number || '').toUpperCase().replace(/\s+/g, '');
+        if (c) counts[c] = (counts[c] || 0) + 1;
       }
-      if (m.exit_time) {
-        const exitDate = new Date(m.exit_time);
+      if (m.out_time || m.exit_time) {
+        const exitDate = new Date(m.out_time || m.exit_time);
         if (isToday(exitDate)) {
           today_out++;
         }
       }
-      if (m.status === 'OUT' && typeof m.duration_minutes === 'number' && m.duration_minutes > 0) {
-        totalCompletedMinutes += m.duration_minutes;
-        completedCount++;
-      }
     });
 
-    const avg_duration_minutes = completedCount > 0 ? Math.round(totalCompletedMinutes / completedCount) : 120;
+    const total_vehicles_today = Object.keys(counts).length;
+    const multi_trip_vehicles_today = Object.values(counts).filter(c => c >= 2).length;
 
     return {
       inside_now,
       today_in,
       today_out,
-      avg_duration_minutes,
-      total_lorries_registered: lorries.length
+      total_vehicles_today,
+      multi_trip_vehicles_today,
+      total_lorries_registered: total_vehicles_today
     };
-  }, [activeLorries, movements, lorries]);
+  }, [activeLorries, movements]);
 
+  // ============================================================================
+  // RECORD ARRIVAL (IN)
+  // Fields: Vehicle number, In time (server timestamp), Remarks
+  // ============================================================================
   const recordEntry = async (data) => {
-    if (!profile) {
-      return { success: false, error: 'Authentication required to record entry.' };
-    }
+    const rawPlate = data.plateNumber || data.vehicle_number || '';
+    const normPlate = formatLorryNumber(rawPlate) || rawPlate.trim().toUpperCase();
 
-    const normPlate = formatLorryNumber(data.plateNumber) || (data.plateNumber || '').trim().toUpperCase();
     if (!normPlate) {
-      return { success: false, error: 'Vehicle Plate Number is required.' };
+      return { success: false, error: 'Vehicle number is required.' };
     }
-    
-    const driverName = (data.driverName && data.driverName.trim()) 
-      ? data.driverName.trim() 
-      : 'Driver';
 
-    const wheelType = data.wheelType || data.vehicleType || '12 Wheel';
-
-    const { isInside, activeMovement } = checkLorryInsideStatus(normPlate);
-    if (isInside && activeMovement) {
+    // Client-side quick check
+    const { isInside } = checkLorryInsideStatus(normPlate);
+    if (isInside) {
       return {
         success: false,
-        error: `DUPLICATE ENTRY REJECTED: Lorry ${normPlate} is ALREADY inside the premises. Please record OUT first before re-entering.`
+        error: `DUPLICATE ENTRY REJECTED: Vehicle ${normPlate} is ALREADY inside premises. Must check OUT first.`
       };
     }
 
-    const exactEntryTime = data.entryTime || new Date().toISOString();
-    let lorry = lorries.find(l => l.plate_number.toUpperCase() === normPlate);
-    const lorryId = lorry ? lorry.id : `lry_${Date.now()}`;
-    
-    // Calculate trip number (e.g. 1st Trip, 2nd Trip) based on past visits
-    const compact = normPlate.replace(/\s+/g, '');
-    const previousMovements = movements.filter(
-      m => (m.plate_number || '').toUpperCase().replace(/\s+/g, '') === compact
-    );
-    const nextTripNumber = previousMovements.length + 1;
+    setIsSyncing(true);
 
-    const newMovement = {
-      id: `mov_${Date.now()}`,
-      lorry_id: lorryId,
-      plate_number: normPlate,
-      vehicle_type: wheelType,
-      driver_name: driverName,
-      driver_phone: data.driverPhone?.trim() || lorry?.default_driver_phone || '',
-      transporter_name: data.transporterName?.trim() || lorry?.transporter_name || 'Standard Transport',
-      cargo_details: data.cargoDetails?.trim() || '',
-      purpose: data.purpose || 'Material Transport',
-      entry_gate: data.entryGate || 'Main Gate',
-      entry_time: exactEntryTime,
-      entry_recorded_by: profile.id,
-      entry_recorded_by_name: profile.full_name,
-      entry_odometer: data.entryOdometer,
-      entry_notes: data.remarks?.trim() || data.entryNotes?.trim() || '',
-      remarks: data.remarks?.trim() || data.entryNotes?.trim() || '',
-      status: 'IN',
-      is_active_inside: true,
-      trip_number: nextTripNumber,
-      visit_number: nextTripNumber,
-      created_at: exactEntryTime
-    };
+    try {
+      // Send to shared cloud API
+      const res = await fetch('/api/movements/in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify({
+          plate_number: normPlate,
+          remarks: (data.remarks || data.entryNotes || '').trim(),
+          created_by: profile?.full_name || 'Staff'
+        })
+      });
 
-    // 1. Immediately store in local state & localStorage so data is NEVER lost!
-    if (!lorry) {
-      const newLorry = {
-        id: lorryId,
-        plate_number: normPlate,
-        transporter_name: data.transporterName?.trim() || 'Standard Transport',
-        vehicle_type: wheelType,
-        default_driver_name: driverName,
-        default_driver_phone: '',
-        total_completed_visits: 0,
-        is_currently_inside: true,
-        created_at: exactEntryTime
-      };
-      setLorries(prev => [newLorry, ...prev]);
-    } else {
-      setLorries(prev => prev.map(l => l.id === lorryId ? {
-        ...l,
-        is_currently_inside: true
-      } : l));
-    }
+      const result = await res.json();
 
-    setMovements(prev => [newMovement, ...prev]);
-
-    // 2. Sync to Supabase in the background if configured
-    if (isConfigured) {
-      try {
-        const { data: upsertLorry } = await supabase
-          .from('lorries')
-          .upsert([{
-            plate_number: normPlate,
-            vehicle_type: wheelType,
-            transporter_name: data.transporterName?.trim() || lorry?.transporter_name || 'Standard Transport',
-            is_currently_inside: true,
-            updated_at: exactEntryTime
-          }], { onConflict: 'plate_number' })
-          .select()
-          .single();
-
-        const actualLorryId = upsertLorry?.id || lorryId;
-
-        const { data: insertedMov, error: movInsertErr } = await supabase
-          .from('lorry_movements')
-          .insert([{
-            lorry_id: actualLorryId,
-            plate_number: normPlate,
-            vehicle_type: wheelType,
-            driver_name: driverName,
-            driver_phone: data.driverPhone?.trim() || lorry?.default_driver_phone || null,
-            transporter_name: data.transporterName?.trim() || lorry?.transporter_name || 'Standard Transport',
-            purpose: data.purpose || 'Material Transport',
-            entry_gate: data.entryGate || 'Main Gate',
-            entry_time: exactEntryTime,
-            entry_recorded_by: profile.id,
-            entry_recorded_by_name: profile.full_name,
-            status: 'IN',
-            is_active_inside: true,
-            visit_number: nextVisitNumber
-          }])
-          .select()
-          .single();
-
-        if (insertedMov) {
-          // Update movement ID from Supabase
-          newMovement.id = insertedMov.id;
-          setMovements(prev => prev.map(m => m.id === newMovement.id ? { ...m, id: insertedMov.id } : m));
-        } else if (movInsertErr) {
-          // Fallback to RPC if installed
-          await supabase.rpc('record_lorry_entry', {
-            p_plate_number: normPlate,
-            p_transporter_name: data.transporterName?.trim() || 'Standard Transport',
-            p_vehicle_type: wheelType,
-            p_driver_name: driverName,
-            p_driver_phone: data.driverPhone?.trim() || '',
-            p_cargo_details: data.cargoDetails?.trim() || '',
-            p_purpose: data.purpose || 'Material Transport',
-            p_entry_gate: data.entryGate || 'Main Gate',
-            p_entry_odometer: data.entryOdometer || null,
-            p_entry_notes: data.entryNotes?.trim() || '',
-            p_user_id: profile.id,
-            p_user_name: profile.full_name
-          });
-        }
-      } catch (err) {
-        console.warn('Supabase entry sync warning (data preserved locally):', err);
+      if (!res.ok || !result.success) {
+        setIsSyncing(false);
+        return { success: false, error: result.error || 'Failed to record entry.' };
       }
-    }
 
-    return { success: true, movement: newMovement, tripNumber: nextTripNumber };
+      // Immediately refresh shared state
+      await refreshData();
+      setIsSyncing(false);
+      return { success: true, movement: result.movement };
+    } catch (err) {
+      console.error('[Record IN] Error:', err);
+      setIsSyncing(false);
+      return { success: false, error: 'Network error: could not connect to shared server.' };
+    }
   };
 
+  // ============================================================================
+  // RECORD DEPARTURE (OUT)
+  // Fields: In time (preserved), Out time (server timestamp), Remarks
+  // ============================================================================
   const recordExit = async (data) => {
-    if (!profile) {
-      return { success: false, error: 'Authentication required to record exit.' };
-    }
+    const movementId = data.movementId || data.movement_id || data.id;
+    const rawPlate = data.plateNumber || data.plate_number;
 
-    const targetMovement = movements.find(m => m.id === data.movementId && m.is_active_inside && m.status === 'IN');
-    if (!targetMovement) {
-      return { success: false, error: 'Movement record not found or lorry is already marked OUT.' };
-    }
+    setIsSyncing(true);
 
-    const exitTimestampStr = data.exitTime || new Date().toISOString();
-    const exitTimestamp = new Date(exitTimestampStr);
-    const entryTimestamp = new Date(targetMovement.entry_time);
-    const durationMinutes = Math.max(1, Math.round((exitTimestamp.getTime() - entryTimestamp.getTime()) / 60000));
+    try {
+      const res = await fetch('/api/movements/out', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify({
+          movement_id: movementId,
+          plate_number: rawPlate,
+          remarks: (data.exitRemarks || data.exitNotes || data.remarks || '').trim()
+        })
+      });
 
-    const updatedMovement = {
-      ...targetMovement,
-      status: 'OUT',
-      is_active_inside: false,
-      exit_time: exitTimestampStr,
-      exit_gate: data.exitGate || 'Main Gate',
-      exit_recorded_by: profile.id,
-      exit_recorded_by_name: profile.full_name,
-      exit_odometer: data.exitOdometer,
-      exit_notes: data.exitRemarks?.trim() || data.exitNotes?.trim() || data.remarks?.trim() || '',
-      exit_remarks: data.exitRemarks?.trim() || data.exitNotes?.trim() || data.remarks?.trim() || '',
-      duration_minutes: durationMinutes,
-      updated_at: exitTimestampStr
-    };
+      const result = await res.json();
 
-    // 1. Immediately update local state & localStorage
-    setMovements(prev => prev.map(m => m.id === data.movementId ? updatedMovement : m));
-
-    setLorries(prev => prev.map(l => {
-      if (l.id === targetMovement.lorry_id || l.plate_number.toUpperCase() === targetMovement.plate_number.toUpperCase()) {
-        return {
-          ...l,
-          is_currently_inside: false,
-          total_completed_visits: (l.total_completed_visits || 0) + 1,
-          updated_at: exitTimestampStr
-        };
+      if (!res.ok || !result.success) {
+        setIsSyncing(false);
+        return { success: false, error: result.error || 'Failed to record departure.' };
       }
-      return l;
-    }));
 
-    // 2. Sync to Supabase in background
-    if (isConfigured) {
-      try {
-        const { error: movErr } = await supabase
-          .from('lorry_movements')
-          .update({
-            status: 'OUT',
-            is_active_inside: false,
-            exit_time: exitTimestampStr,
-            exit_gate: data.exitGate || 'Main Gate',
-            exit_recorded_by: profile.id,
-            exit_recorded_by_name: profile.full_name,
-            duration_minutes: durationMinutes,
-            updated_at: exitTimestampStr
-          })
-          .eq('id', data.movementId);
-
-        if (!movErr && targetMovement.lorry_id) {
-          const currentLorry = lorries.find(l => l.id === targetMovement.lorry_id);
-          const newVisits = (currentLorry?.total_completed_visits || 0) + 1;
-          await supabase
-            .from('lorries')
-            .update({
-              is_currently_inside: false,
-              total_completed_visits: newVisits,
-              updated_at: exitTimestampStr
-            })
-            .eq('id', targetMovement.lorry_id);
-        } else if (movErr) {
-          await supabase.rpc('record_lorry_exit', {
-            p_movement_id: data.movementId,
-            p_exit_gate: data.exitGate || 'Main Gate',
-            p_exit_odometer: data.exitOdometer || null,
-            p_exit_notes: data.exitNotes?.trim() || '',
-            p_user_id: profile.id,
-            p_user_name: profile.full_name
-          });
-        }
-      } catch (err) {
-        console.warn('Supabase exit sync warning (data preserved locally):', err);
-      }
+      await refreshData();
+      setIsSyncing(false);
+      return { success: true, movement: result.movement };
+    } catch (err) {
+      console.error('[Record OUT] Error:', err);
+      setIsSyncing(false);
+      return { success: false, error: 'Network error: could not connect to shared server.' };
     }
-
-    return { success: true, movement: updatedMovement };
   };
 
-  const addOrUpdateLorry = async (data) => {
-    if (!isAdmin) {
-      return { success: false, error: 'Access Denied: Only Admin can manage the Lorries directory.' };
+  // ============================================================================
+  // ADMIN OPERATIONS: UPDATE / DELETE / CLEAR / RESET
+  // ============================================================================
+  const updateMovement = async (movementId, updatedFields) => {
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: 'Access Denied: Only Admin can edit records.' };
     }
 
-    const normPlate = (data.plate_number || '').trim().toUpperCase();
-    if (!normPlate) {
-      return { success: false, error: 'Plate number is required.' };
-    }
+    try {
+      const res = await fetch(`/api/movements/${movementId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plate_number: updatedFields.plate_number,
+          remarks: updatedFields.remarks || updatedFields.entry_notes,
+          in_time: updatedFields.entry_time || updatedFields.in_time,
+          out_time: updatedFields.exit_time || updatedFields.out_time
+        })
+      });
 
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('lorries')
-          .upsert([{
-            plate_number: normPlate,
-            transporter_name: data.transporter_name || 'Direct / Unknown',
-            vehicle_type: data.vehicle_type || '10-Wheeler',
-            default_driver_name: data.default_driver_name || null,
-            default_driver_phone: data.default_driver_phone || null,
-            notes: data.notes || null,
-            updated_at: new Date().toISOString()
-          }], { onConflict: 'plate_number' });
-
-        if (error) throw error;
+      const result = await res.json();
+      if (res.ok && result.success) {
         await refreshData();
         return { success: true };
-      } catch (err) {
-        console.error('Supabase lorry upsert error:', err);
       }
+      return { success: false, error: result.error || 'Failed to update record.' };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    const existingIndex = lorries.findIndex(l => l.plate_number.toUpperCase() === normPlate);
-    if (existingIndex >= 0) {
-      setLorries(prev => prev.map((l, idx) => idx === existingIndex ? {
-        ...l,
-        ...data,
-        plate_number: normPlate,
-        updated_at: new Date().toISOString()
-      } : l));
-    } else {
-      const newLorry = {
-        id: `lry_${Date.now()}`,
-        plate_number: normPlate,
-        transporter_name: data.transporter_name || 'Direct / Unknown',
-        vehicle_type: data.vehicle_type || '10-Wheeler',
-        default_driver_name: data.default_driver_name || '',
-        default_driver_phone: data.default_driver_phone || '',
-        notes: data.notes || '',
-        total_completed_visits: 0,
-        is_currently_inside: false,
-        created_at: new Date().toISOString()
-      };
-      setLorries(prev => [newLorry, ...prev]);
-    }
-
-    return { success: true };
   };
 
   const deleteMovement = async (movementId) => {
-    if (!isAdmin) {
-      return { success: false, error: 'Access Denied: Only Admin can delete movement records.' };
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: 'Access Denied: Only Admin can delete records.' };
     }
 
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('lorry_movements')
-          .delete()
-          .eq('id', movementId);
-
-        if (error) throw error;
+    try {
+      const res = await fetch(`/api/movements/${movementId}`, {
+        method: 'DELETE'
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
         await refreshData();
         return { success: true };
-      } catch (err) {
-        return { success: false, error: err.message };
       }
+      return { success: false, error: result.error || 'Failed to delete record.' };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    setMovements(prev => prev.filter(m => m.id !== movementId));
-    return { success: true };
   };
 
-  // Admin capability: Edit any movement record
-  const updateMovement = async (movementId, updatedData) => {
-    if (!isAdmin) {
-      return { success: false, error: 'Access Denied: Only Admin can edit movement records.' };
-    }
-
-    const normPlate = updatedData.plate_number 
-      ? (formatLorryNumber(updatedData.plate_number) || updatedData.plate_number.toUpperCase().trim()) 
-      : undefined;
-
-    const cleanData = { ...updatedData };
-    if (normPlate) cleanData.plate_number = normPlate;
-
-    setMovements(prev => prev.map(m => m.id === movementId ? { ...m, ...cleanData, updated_at: new Date().toISOString() } : m));
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('lorry_movements')
-          .update({ ...cleanData, updated_at: new Date().toISOString() })
-          .eq('id', movementId);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Supabase updateMovement error:', err);
-      }
-    }
-
-    return { success: true };
-  };
-
-  // Admin capability: Clear all daily data
   const clearDailyData = async () => {
-    if (!isAdmin) {
-      return { success: false, error: 'Access Denied: Only Admin can clear daily data.' };
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: 'Access Denied: Only Admin can clear data.' };
     }
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startIso = startOfToday.toISOString();
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('lorry_movements')
-          .delete()
-          .gte('entry_time', startIso);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Supabase clearDailyData error:', err);
-      }
-    }
-
-    setMovements(prev => prev.filter(m => {
-      try {
-        return !isToday(new Date(m.entry_time));
-      } catch {
-        return false;
-      }
-    }));
-
-    setLorries(prev => prev.map(l => ({
-      ...l,
-      is_currently_inside: false
-    })));
-
-    return { success: true };
-  };
-
-  // Admin capability: Complete Master Reset / Delete ALL records across the entire database
-  const resetAllRecords = async () => {
-    if (!isAdmin) {
-      return { success: false, error: 'Access Denied: Only Admin can reset all records.' };
-    }
-
-    if (isConfigured) {
-      try {
-        await supabase
-          .from('lorry_movements')
-          .delete()
-          .neq('id', '0');
-
-        await supabase
-          .from('lorries')
-          .delete()
-          .neq('id', '0');
-      } catch (err) {
-        console.error('Supabase resetAllRecords error:', err);
-      }
-    }
-
-    // Wipe local state and storage clean
-    setMovements([]);
-    setLorries([]);
     try {
-      localStorage.removeItem(LOCAL_STORAGE_MOVEMENTS_KEY);
-      localStorage.removeItem(LOCAL_STORAGE_LORRIES_KEY);
-    } catch (_) {}
-
-    return { success: true };
+      const res = await fetch('/api/admin/clear-daily', { method: 'POST' });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        await refreshData();
+        return { success: true, count: result.cleared };
+      }
+      return { success: false, error: result.error || 'Failed to clear data.' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   };
+
+  const resetAllRecords = async () => {
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: 'Access Denied: Only Admin can reset records.' };
+    }
+
+    try {
+      const res = await fetch('/api/admin/reset-all', { method: 'POST' });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        await refreshData();
+        return { success: true };
+      }
+      return { success: false, error: result.error || 'Failed to reset records.' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Lorries mock list for directory fallback
+  const lorries = useMemo(() => {
+    const map = new Map();
+    movements.forEach(m => {
+      const p = m.plate_number;
+      if (p && !map.has(p)) {
+        map.set(p, {
+          id: `lry_${p}`,
+          plate_number: p,
+          is_currently_inside: m.is_active_inside,
+          total_completed_visits: m.trip_number || 1
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [movements]);
 
   return (
     <LorryDataContext.Provider
       value={{
-        lorries,
         movements,
         activeLorries,
+        lorries,
         stats,
         isLoading,
         isSyncing,
+        syncStatus,
+        lastSyncTime,
         refreshData,
-        checkLorryInsideStatus,
-        getLorryTripInfo,
         recordEntry,
         recordExit,
-        addOrUpdateLorry,
+        checkLorryInsideStatus,
+        getLorryTripInfo,
         updateMovement,
         deleteMovement,
         clearDailyData,

@@ -1,77 +1,126 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase, getSupabaseConfig } from '../lib/supabase';
 import { INITIAL_PROFILES } from '../data/mockData';
 
 const AuthContext = createContext(undefined);
 
-const LOCAL_STORAGE_PROFILES_KEY = 'ltp_local_profiles';
-const LOCAL_STORAGE_ACTIVE_USER_KEY = 'ltp_local_active_user';
+const LOCAL_STORAGE_ACTIVE_USER_KEY = 'fleetgate_active_user';
+const LOCAL_STORAGE_TOKEN_KEY = 'fleetgate_auth_token';
 
-// Staff does NOT need login! Default public gate mode.
 export const DEFAULT_STAFF_PROFILE = {
   id: 'usr_staff_gate',
-  email: 'staff@lorrytrackpro.local',
-  full_name: 'Gate Staff',
+  email: 'staff@fleetgate.com',
+  full_name: 'Gate Security Staff',
   role: 'staff',
   is_active: true
 };
 
 export const AuthProvider = ({ children }) => {
-  // Default to staff mode immediately - no login required for staff!
-  const [profile, setProfile] = useState(DEFAULT_STAFF_PROFILE);
-  const [isLoading, setIsLoading] = useState(false);
-  const [allStaff, setAllStaff] = useState(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_PROFILES_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_PROFILES;
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_STAFF_PROFILE;
+    } catch {
+      return DEFAULT_STAFF_PROFILE;
+    }
   });
 
+  const [authToken, setAuthToken] = useState(() => {
+    return localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY) || '';
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [allStaff, setAllStaff] = useState(INITIAL_PROFILES);
   const { isConfigured } = getSupabaseConfig();
-  const [isDemoMode, setIsDemoMode] = useState(!isConfigured);
 
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(allStaff));
-  }, [allStaff]);
-
-  useEffect(() => {
-    // Check if Admin was previously logged in
-    const savedUser = localStorage.getItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.role === 'admin' && parsed.email === 'admin@gmail.com') {
-          setProfile(parsed);
+  // Fetch staff list from shared backend API
+  const refreshStaffList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/staff');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.staff)) {
+          setAllStaff(data.staff);
           return;
         }
-      } catch (e) {
-        console.error(e);
       }
-    }
-    // Otherwise keep DEFAULT_STAFF_PROFILE (Staff no login needed!)
-    setProfile(DEFAULT_STAFF_PROFILE);
-  }, []);
+    } catch (_) {}
 
-  // ONLY Admin needs login: admin@gmail.com / Admin@123
+    // Fallback to Supabase if configured
+    if (isConfigured) {
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').order('full_name');
+        if (!error && data) setAllStaff(data);
+      } catch (_) {}
+    }
+  }, [isConfigured]);
+
+  useEffect(() => {
+    refreshStaffList();
+  }, [refreshStaffList]);
+
+  // Persist session to local storage
+  useEffect(() => {
+    if (profile) {
+      localStorage.setItem(LOCAL_STORAGE_ACTIVE_USER_KEY, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (authToken) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authToken);
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+    }
+  }, [authToken]);
+
+  // Shared Cloud Login: Authenticates against the shared database
   const login = async (email, password) => {
     setIsLoading(true);
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Required Admin Master Credentials
+    try {
+      // 1. Try shared backend API first (works across all phones and devices)
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPass })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        setProfile(data.user);
+        if (data.token) setAuthToken(data.token);
+        setIsLoading(false);
+        refreshStaffList();
+        return { success: true };
+      } else if (data.error) {
+        setIsLoading(false);
+        return { success: false, error: data.error };
+      }
+    } catch (apiErr) {
+      console.warn('API login error, trying fallback:', apiErr);
+    }
+
+    // 2. Direct Admin Master Fallback (admin@gmail.com / Admin@123)
     if (cleanEmail === 'admin@gmail.com' && cleanPass === 'Admin@123') {
       const adminUser = {
-        id: 'usr_admin_01',
+        id: 'usr_admin_master',
         email: 'admin@gmail.com',
-        full_name: 'Admin',
+        full_name: 'System Administrator',
         role: 'admin',
         is_active: true
       };
       setProfile(adminUser);
-      localStorage.setItem(LOCAL_STORAGE_ACTIVE_USER_KEY, JSON.stringify(adminUser));
+      setAuthToken(`fg_admin_${Date.now()}`);
       setIsLoading(false);
       return { success: true };
     }
 
-    // If Supabase is configured, try Supabase auth fallback
+    // 3. Fallback to Supabase if configured
     if (isConfigured) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -86,184 +135,77 @@ export const AuthProvider = ({ children }) => {
             .eq('id', authData.user.id)
             .single();
 
-          if (profileData && profileData.role === 'admin') {
+          if (profileData) {
             setProfile(profileData);
-            localStorage.setItem(LOCAL_STORAGE_ACTIVE_USER_KEY, JSON.stringify(profileData));
             setIsLoading(false);
             return { success: true };
           }
         }
       } catch (err) {
-        console.warn('Supabase auth attempt:', err);
+        console.error('Supabase login error:', err);
       }
     }
 
     setIsLoading(false);
-    return { 
-      success: false, 
-      error: 'Invalid email or password.' 
-    };
-  };
-
-  const loginAsDemoUser = (role) => {
-    if (role === 'admin') {
-      const adminUser = {
-        id: 'usr_admin_01',
-        email: 'admin@gmail.com',
-        full_name: 'Admin',
-        role: 'admin',
-        is_active: true
-      };
-      setProfile(adminUser);
-      localStorage.setItem(LOCAL_STORAGE_ACTIVE_USER_KEY, JSON.stringify(adminUser));
-    } else {
-      setProfile(DEFAULT_STAFF_PROFILE);
-      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
-    }
+    return { success: false, error: 'Invalid email or password.' };
   };
 
   const logout = async () => {
     if (isConfigured) {
       try {
         await supabase.auth.signOut();
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (_) {}
     }
-    localStorage.removeItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
-    // Staff no need of login - reverts to default staff mode immediately
+    // Revert to default staff profile (Staff needs no login to record vehicles)
     setProfile(DEFAULT_STAFF_PROFILE);
+    setAuthToken('');
+    localStorage.removeItem(LOCAL_STORAGE_ACTIVE_USER_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
   };
 
-  const createStaffAccount = async ({ email, fullName, role, password }) => {
+  // Staff Account Management (Admin only)
+  const createStaffAccount = async ({ fullName, email, password, role = 'staff' }) => {
     if (!profile || profile.role !== 'admin') {
       return { success: false, error: 'Access Denied: Only Admin can create staff accounts.' };
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (allStaff.some(s => s.email.toLowerCase() === cleanEmail)) {
-      return { success: false, error: 'An account with this email already exists.' };
-    }
-
-    const newStaffUser = {
-      id: `usr_staff_${Date.now()}`,
-      email: cleanEmail,
-      full_name: fullName.trim(),
-      role: role || 'staff',
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-
-    if (isConfigured) {
-      try {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password: password || 'StaffPass@123',
-          options: {
-            data: {
-              full_name: fullName.trim(),
-              role: role || 'staff'
-            }
-          }
-        });
-
-        if (signUpError) {
-          return { success: false, error: signUpError.message };
-        }
-
-        if (signUpData?.user) {
-          newStaffUser.id = signUpData.user.id;
-          await supabase.from('profiles').upsert([
-            {
-              id: signUpData.user.id,
-              email: cleanEmail,
-              full_name: fullName.trim(),
-              role: role || 'staff',
-              is_active: true
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Supabase user creation error:', err);
+    try {
+      const res = await fetch('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, password, role })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        refreshStaffList();
+        return { success: true };
       }
+      return { success: false, error: data.error || 'Failed to create staff account.' };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    setAllStaff(prev => [newStaffUser, ...prev]);
-    return { success: true };
   };
 
-  const toggleStaffStatus = async (userId, active) => {
-    if (!profile || profile.role !== 'admin') return false;
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ is_active: active, updated_at: new Date().toISOString() })
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (e) {
-        console.error('Failed to toggle profile in Supabase:', e);
-      }
-    }
-
-    setAllStaff(prev => prev.map(s => s.id === userId ? { ...s, is_active: active } : s));
-    return true;
-  };
-
-  const updateStaffRole = async (userId, role) => {
-    if (!profile || profile.role !== 'admin') return false;
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ role, updated_at: new Date().toISOString() })
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (e) {
-        console.error('Failed to update role in Supabase:', e);
-      }
-    }
-
-    setAllStaff(prev => prev.map(s => s.id === userId ? { ...s, role } : s));
-    return true;
-  };
-
-  const updateStaffAccount = async (userId, { fullName, email, role, isActive }) => {
+  const updateStaffAccount = async (userId, { fullName, email, password, role, isActive }) => {
     if (!profile || profile.role !== 'admin') {
       return { success: false, error: 'Access Denied: Only Admin can edit staff accounts.' };
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    
-    if (allStaff.some(s => s.id !== userId && s.email.toLowerCase() === cleanEmail)) {
-      return { success: false, error: 'This email is already in use by another account.' };
-    }
-
-    const updatedFields = {
-      full_name: fullName.trim(),
-      email: cleanEmail,
-      role: role || 'staff',
-      is_active: isActive !== undefined ? isActive : true,
-      updated_at: new Date().toISOString()
-    };
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update(updatedFields)
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Supabase updateStaffAccount error:', err);
+    try {
+      const res = await fetch(`/api/staff/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: fullName, email, password, role, is_active: isActive })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        refreshStaffList();
+        return { success: true };
       }
+      return { success: false, error: data.error || 'Failed to update staff account.' };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    setAllStaff(prev => prev.map(s => s.id === userId ? { ...s, ...updatedFields } : s));
-    return { success: true };
   };
 
   const deleteStaffAccount = async (userId) => {
@@ -271,48 +213,41 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'Access Denied: Only Admin can delete staff accounts.' };
     }
 
-    if (userId === profile.id) {
-      return { success: false, error: 'Cannot delete your own active admin account.' };
-    }
-
-    if (isConfigured) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Supabase deleteStaffAccount error:', err);
+    try {
+      const res = await fetch(`/api/staff/${userId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        refreshStaffList();
+        return { success: true };
       }
+      return { success: false, error: data.error || 'Failed to delete staff account.' };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    setAllStaff(prev => prev.filter(s => s.id !== userId));
-    return { success: true };
   };
 
   const isAdmin = profile?.role === 'admin' && profile?.is_active;
-  const isStaff = (profile?.role === 'staff' || profile?.role === 'admin') && Boolean(profile?.is_active);
+  const isStaff = Boolean(profile?.is_active);
   const isAuthenticated = Boolean(profile && profile.is_active);
 
   return (
     <AuthContext.Provider
       value={{
         profile,
+        authToken,
         isAdmin: Boolean(isAdmin),
         isStaff: Boolean(isStaff),
         isAuthenticated,
         isLoading,
-        isDemoMode,
         allStaff,
         login,
-        loginAsDemoUser,
         logout,
+        refreshStaffList,
         createStaffAccount,
-        toggleStaffStatus,
-        updateStaffRole,
         updateStaffAccount,
-        deleteStaffAccount,
+        deleteStaffAccount
       }}
     >
       {children}
