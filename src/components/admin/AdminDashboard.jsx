@@ -4,6 +4,7 @@ import { useLorryData } from '../../context/LorryDataContext';
 import { format, isToday } from 'date-fns';
 import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
+import { ThemeToggle } from '../common/ThemeToggle';
 import { 
   Users, 
   Trash2, 
@@ -242,42 +243,45 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none pb-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none pb-12 transition-colors duration-200">
       
       {/* Top Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between">
+      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <TipperTruckIcon className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold tracking-wider text-white">
-              FLEET <span className="text-emerald-400">GATE</span>
+            <h1 className="text-base font-extrabold tracking-wider text-slate-900 dark:text-white">
+              FLEET <span className="text-emerald-600 dark:text-emerald-400">GATE</span>
             </h1>
-            <p className="text-[11px] text-amber-400 font-semibold">Admin Console</p>
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">Admin Console</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           <button
             onClick={() => refreshData()}
             disabled={isSyncing}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
             title="Refresh shared database"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
           </button>
           <button
             onClick={onOpenStaffView}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
           >
             <Eye className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Staff Entry Screen</span>
           </button>
           <button
             onClick={logout}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Logout</span>
@@ -286,14 +290,14 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
       </header>
 
       {/* Primary Tab Navigation: Dashboard & Records VS Staff Database */}
-      <div className="bg-slate-900/80 border-b border-slate-800 px-4 py-2">
+      <div className="bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-4 py-2">
         <div className="max-w-6xl mx-auto flex space-x-2">
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
               activeTab === 'dashboard'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <TipperTruckIcon className="w-4 h-4" />
@@ -304,8 +308,8 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             onClick={() => setActiveTab('staff')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
               activeTab === 'staff'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -325,65 +329,65 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               
               {/* Metric 1: Total Number of Vehicles */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs transition-colors">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Total Vehicles
                   </span>
-                  <TipperTruckIcon className="w-5 h-5 text-emerald-400" />
+                  <TipperTruckIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-300">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-300">
                   {dashboardStats.totalVehiclesCount}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   Total vehicles tracked
                 </div>
               </div>
 
               {/* Metric 2: Vehicles on 2+ Trips Today */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs transition-colors">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     2+ Trips Today
                   </span>
                   <span className="text-sm">🔄</span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-300">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-300">
                   {dashboardStats.multiTripVehiclesCount}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   Multi-trip vehicles
                 </div>
               </div>
 
               {/* Metric 3: Inside Right Now */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs transition-colors">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Inside Now
                   </span>
                   <span className="text-sm">🟢</span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
                   {dashboardStats.insideNowCount}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   Pending OUT
                 </div>
               </div>
 
               {/* Metric 4: Total Trips Today */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs transition-colors">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Total Trips
                   </span>
                   <Clock className="w-4 h-4 text-slate-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white">
                   {dashboardStats.todayTripsCount}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   Today's total visits
                 </div>
               </div>
@@ -391,15 +395,15 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             </div>
 
             {/* Action Bar: Title + Clear All Daily Data Button */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-colors">
               <div>
-                <h2 className="text-base font-bold text-white flex items-center space-x-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                   <span>Lorry Movement Records</span>
-                  <span className="text-xs font-mono font-bold bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
                     {movements.length} records
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Admin full control: Edit or delete records, clear today's entries, or reset all database records.
                 </p>
               </div>
@@ -409,10 +413,10 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                 {/* Button 1: Clear Today's Daily Data */}
                 <button
                   onClick={() => setIsClearDailyModalOpen(true)}
-                  className="flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-bold transition shadow-sm"
+                  className="flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 text-xs font-bold transition shadow-xs"
                   title="Clear only today's records"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                   <span>Clear Today's Data</span>
                 </button>
 
@@ -429,11 +433,11 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             </div>
 
             {/* Movement Records Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
-                    <tr className="bg-slate-850 text-slate-300 border-b border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+                    <tr className="bg-slate-100/80 dark:bg-slate-850 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                       <th className="py-3 px-3 sm:px-4">Lorry Number</th>
                       <th className="py-3 px-3 sm:px-4">Remarks</th>
                       <th className="py-3 px-3 sm:px-4">Trip</th>
@@ -443,10 +447,10 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                       <th className="py-3 px-3 sm:px-4 text-right">Admin Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 font-medium">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                     {movements.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">
+                        <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                           No lorry movements recorded in database.
                         </td>
                       </tr>
@@ -458,59 +462,59 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                         const tripNumber = mov.trip_number || mov.visit_number || 1;
 
                         return (
-                          <tr key={mov.id} className="hover:bg-slate-850/50 transition">
+                          <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition">
                             {/* Plate Number */}
-                            <td className="py-3 px-3 sm:px-4 font-mono font-bold text-white whitespace-nowrap">
+                            <td className="py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                               {mov.plate_number}
                             </td>
 
                             {/* Remarks */}
-                            <td className="py-3 px-3 sm:px-4 text-xs">
+                            <td className="py-3.5 px-3 sm:px-4 text-xs">
                               {mov.remarks || mov.entry_notes || mov.exit_remarks || mov.exit_notes ? (
                                 <div className="space-y-0.5 max-w-[200px]">
                                   {(mov.remarks || mov.entry_notes) && (
-                                    <span className="block truncate text-slate-200">
+                                    <span className="block truncate text-slate-700 dark:text-slate-200">
                                       {mov.remarks || mov.entry_notes}
                                     </span>
                                   )}
                                   {(mov.exit_remarks || mov.exit_notes) && (
-                                    <span className="block truncate text-[11px] text-amber-300 font-mono">
+                                    <span className="block truncate text-[11px] text-amber-700 dark:text-amber-300 font-mono">
                                       OUT: {mov.exit_remarks || mov.exit_notes}
                                     </span>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-slate-600 font-mono text-xs">-</span>
+                                <span className="text-slate-400 dark:text-slate-600 font-mono text-xs">-</span>
                               )}
                             </td>
 
                             {/* Trip Badge */}
-                            <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
+                            <td className="py-3.5 px-3 sm:px-4 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-extrabold ${
                                 tripNumber > 1
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
-                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/50'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                               }`}>
                                 {getTripLabel(tripNumber)}
                               </span>
                             </td>
 
                             {/* IN Time */}
-                            <td className="py-3 px-3 sm:px-4 font-mono text-emerald-400 whitespace-nowrap">
+                            <td className="py-3.5 px-3 sm:px-4 font-mono text-emerald-700 dark:text-emerald-400 font-bold whitespace-nowrap">
                               {inTimeFormatted}
                             </td>
 
                             {/* OUT Time */}
-                            <td className="py-3 px-3 sm:px-4 font-mono whitespace-nowrap">
+                            <td className="py-3.5 px-3 sm:px-4 font-mono whitespace-nowrap">
                               {isPending ? (
-                                <span className="text-amber-400 font-bold">Pending</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-bold">Pending</span>
                               ) : (
-                                <span className="text-slate-300">{outTimeFormatted}</span>
+                                <span className="text-slate-600 dark:text-slate-300">{outTimeFormatted}</span>
                               )}
                             </td>
 
                             {/* Status */}
-                            <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
+                            <td className="py-3.5 px-3 sm:px-4 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                                 isPending
                                   ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
@@ -556,20 +560,20 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
           <div className="space-y-5">
             
             {/* Top Action Bar */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs transition-colors">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-amber-400" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                  <Users className="w-5 h-5 text-amber-500" />
                   <span>Staff Database Management</span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Full staff control: Add new gate staff, update credentials, change roles, or delete staff records.
                 </p>
               </div>
 
               <button
                 onClick={handleOpenAddStaff}
-                className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition self-start sm:self-auto"
+                className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition self-start sm:self-auto active:scale-95"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>ADD NEW STAFF</span>
@@ -577,11 +581,11 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             </div>
 
             {/* Staff Database Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
-                    <tr className="bg-slate-850 text-slate-300 border-b border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+                    <tr className="bg-slate-100/80 dark:bg-slate-850 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                       <th className="py-3 px-3 sm:px-4">Staff Name</th>
                       <th className="py-3 px-3 sm:px-4">Email / Login ID</th>
                       <th className="py-3 px-3 sm:px-4">Role</th>
@@ -589,10 +593,10 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                       <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 font-medium">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                     {allStaff.filter(s => s.role !== 'admin' && s.email !== 'admin@gmail.com').length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-slate-500 text-xs">
+                        <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                           No staff accounts yet. Click "Add New Staff" to add gate staff.
                         </td>
                       </tr>
@@ -601,14 +605,14 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                         const isActive = staff.is_active !== false;
 
                         return (
-                          <tr key={staff.id} className="hover:bg-slate-850/50 transition">
+                          <tr key={staff.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition">
                             {/* Name */}
-                            <td className="py-3 px-3 sm:px-4 font-bold text-white whitespace-nowrap">
+                            <td className="py-3 px-3 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
                               <span>{staff.full_name}</span>
                             </td>
 
                           {/* Email */}
-                          <td className="py-3 px-3 sm:px-4 font-mono text-slate-300 whitespace-nowrap">
+                          <td className="py-3 px-3 sm:px-4 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                             {staff.email}
                           </td>
 
@@ -616,8 +620,8 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                           <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${
                               staff.role === 'admin' 
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
-                                : 'bg-slate-800 text-slate-300'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40' 
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                             }`}>
                               {staff.role}
                             </span>
@@ -627,8 +631,8 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                           <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                               isActive
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                                : 'bg-rose-950 text-rose-400 border border-rose-800'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950 dark:text-rose-400 dark:border-rose-800'
                             }`}>
                               {isActive ? 'Active' : 'Inactive'}
                             </span>
@@ -639,7 +643,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                             <div className="flex items-center justify-end space-x-1.5">
                               <button
                                 onClick={() => handleOpenEditStaff(staff)}
-                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-600 dark:text-amber-400 border border-slate-200 dark:border-slate-700 transition"
                                 title="Edit Staff"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -647,7 +651,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                               
                               <button
                                 onClick={() => setDeletingStaffId(staff.id)}
-                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-rose-400 border border-slate-700 hover:border-rose-800 transition"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 transition"
                                 title="Delete Staff"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -669,16 +673,16 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: EDIT MOVEMENT RECORD ================= */}
       {editingMovement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                <Edit3 className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <Edit3 className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                 <span>Edit Movement Record</span>
               </h3>
               <button 
                 onClick={() => setEditingMovement(null)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400"
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -686,7 +690,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
             <form onSubmit={handleSaveMovementEdit} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Lorry Number
                 </label>
                 <input
@@ -694,12 +698,12 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   required
                   value={movementForm.plate_number}
                   onChange={(e) => setMovementForm({ ...movementForm, plate_number: formatLorryNumber(e.target.value) })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   IN Remarks
                 </label>
                 <input
@@ -707,12 +711,12 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   placeholder="Optional entry remarks"
                   value={movementForm.remarks}
                   onChange={(e) => setMovementForm({ ...movementForm, remarks: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   OUT Remarks
                 </label>
                 <input
@@ -720,44 +724,44 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   placeholder="Optional exit remarks"
                   value={movementForm.exit_remarks}
                   onChange={(e) => setMovementForm({ ...movementForm, exit_remarks: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     IN Time
                   </label>
                   <input
                     type="datetime-local"
                     value={movementForm.entry_time}
                     onChange={(e) => setMovementForm({ ...movementForm, entry_time: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     OUT Time
                   </label>
                   <input
                     type="datetime-local"
                     value={movementForm.exit_time}
                     onChange={(e) => setMovementForm({ ...movementForm, exit_time: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Status
                 </label>
                 <select
                   value={movementForm.status}
                   onChange={(e) => setMovementForm({ ...movementForm, status: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="IN">IN (Active Inside)</option>
                   <option value="OUT">OUT (Completed Visit)</option>
@@ -768,13 +772,13 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                 <button
                   type="button"
                   onClick={() => setEditingMovement(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition"
                 >
                   Save Changes
                 </button>
@@ -786,27 +790,27 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: CONFIRM DELETE MOVEMENT ================= */}
       {deletingMovementId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <div className="w-10 h-10 rounded-full bg-rose-950/80 border border-rose-500/50 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-500/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto">
               <Trash2 className="w-5 h-5" />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-white">Delete Movement Record?</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete Movement Record?</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 Are you sure you want to permanently delete this lorry record? This action cannot be undone.
               </p>
             </div>
             <div className="flex space-x-2 pt-2">
               <button
                 onClick={() => setDeletingMovementId(null)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteMovement}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition"
               >
                 Delete Record
               </button>
@@ -817,27 +821,27 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: CONFIRM CLEAR ALL DAILY DATA ================= */}
       {isClearDailyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-full bg-rose-950 border border-rose-500/60 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-500/40 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-500/60 flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1.5">
-              <h3 className="text-base font-extrabold text-white">Clear All Daily Data?</h3>
-              <p className="text-xs text-rose-300">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Clear All Daily Data?</h3>
+              <p className="text-xs text-rose-700 dark:text-rose-300">
                 This will delete all of today's movements ({dashboardStats.todayTripsCount} trips) and reset the live daily gate counters for staff.
               </p>
             </div>
             <div className="flex space-x-2 pt-2">
               <button
                 onClick={() => setIsClearDailyModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmClearDailyData}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-lg"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-lg transition"
               >
                 Confirm Clear
               </button>
@@ -848,24 +852,24 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: CONFIRM RESET ALL RECORDS (MASTER RESET) ================= */}
       {isResetAllModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fadeIn">
-          <div className="bg-slate-900 border-2 border-rose-600 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-rose-950 border border-rose-500 flex items-center justify-center text-rose-400 mx-auto shadow-inner">
-              <AlertTriangle className="w-7 h-7 text-rose-500 animate-pulse" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border-2 border-rose-600 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-500 flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 text-rose-600 dark:text-rose-500 animate-pulse" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-black text-white">Reset ALL Records?</h3>
-              <p className="text-xs text-rose-300 leading-relaxed">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Reset ALL Records?</h3>
+              <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
                 This is a <strong>complete master reset</strong>. It will permanently delete <strong>all {movements.length} lorry movement records</strong>, clear all registered vehicle history, and reset all trip counters to zero across the database.
               </p>
-              <p className="text-[11px] text-slate-400 bg-slate-950 p-2 rounded-xl border border-slate-800">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800">
                 ⚠️ This action is permanent and cannot be undone.
               </p>
             </div>
             <div className="flex space-x-2 pt-2">
               <button
                 onClick={() => setIsResetAllModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
               >
                 Cancel
               </button>
@@ -882,30 +886,30 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: ADD / EDIT STAFF ================= */}
       {(isAddStaffModalOpen || editingStaff) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                <Users className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <Users className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                 <span>{editingStaff ? 'Edit Staff Account' : 'Add New Staff Account'}</span>
               </h3>
               <button 
                 onClick={() => { setIsAddStaffModalOpen(false); setEditingStaff(null); }}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400"
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {staffFormError && (
-              <div className="p-2.5 bg-rose-950/80 border border-rose-500/50 rounded-xl text-xs text-rose-300">
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-500/50 rounded-xl text-xs text-rose-700 dark:text-rose-300">
                 {staffFormError}
               </div>
             )}
 
             <form onSubmit={handleSaveStaff} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Full Name
                 </label>
                 <input
@@ -914,12 +918,12 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   placeholder="e.g. Ramesh Kumar"
                   value={staffForm.fullName}
                   onChange={(e) => setStaffForm({ ...staffForm, fullName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Email / Login ID
                 </label>
                 <input
@@ -928,13 +932,13 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   placeholder="e.g. staff1@lorrytrackpro.local"
                   value={staffForm.email}
                   onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                 />
               </div>
 
               {!editingStaff && (
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     Initial Password
                   </label>
                   <input
@@ -942,20 +946,20 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                     required
                     value={staffForm.password}
                     onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                   />
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                     Role
                   </label>
                   <select
                     value={staffForm.role}
                     onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="staff">Staff (Gate Entry)</option>
                     <option value="admin">Admin (Full Control)</option>
@@ -964,13 +968,13 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
                 {editingStaff && (
                   <div>
-                    <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                       Account Status
                     </label>
                     <select
                       value={staffForm.isActive ? 'active' : 'inactive'}
                       onChange={(e) => setStaffForm({ ...staffForm, isActive: e.target.value === 'active' })}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -983,13 +987,13 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                 <button
                   type="button"
                   onClick={() => { setIsAddStaffModalOpen(false); setEditingStaff(null); }}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition"
                 >
                   {editingStaff ? 'Save Changes' : 'Create Account'}
                 </button>
@@ -1001,27 +1005,27 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
 
       {/* ================= MODAL: CONFIRM DELETE STAFF ================= */}
       {deletingStaffId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <div className="w-10 h-10 rounded-full bg-rose-950/80 border border-rose-500/50 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-500/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto">
               <Trash2 className="w-5 h-5" />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-white">Delete Staff Account?</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete Staff Account?</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 Are you sure you want to permanently delete this staff member? They will lose access immediately.
               </p>
             </div>
             <div className="flex space-x-2 pt-2">
               <button
                 onClick={() => setDeletingStaffId(null)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteStaff}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition"
               >
                 Delete Staff
               </button>
