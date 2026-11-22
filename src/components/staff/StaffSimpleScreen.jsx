@@ -221,57 +221,54 @@ export const StaffSimpleScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none pb-12 transition-colors duration-200">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none pb-12 transition-colors duration-200">
       
       {/* Top Header */}
-      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sticky top-0 z-30 safe-top flex items-center justify-between shadow-xs">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 border border-emerald-400/30 flex items-center justify-center text-white shadow-md shadow-emerald-500/10">
-            <TipperTruckIcon className="w-5 h-5 text-emerald-100" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-base font-extrabold tracking-wider text-slate-900 dark:text-white">
+      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 safe-top shadow-xs transition-colors">
+        <div className="max-w-4xl w-full mx-auto px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 border border-emerald-500/40 flex items-center justify-center text-white shadow-md">
+              <TipperTruckIcon className="w-5 h-5 text-emerald-300" />
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold tracking-wider text-slate-900 dark:text-white leading-none">
                 FLEET <span className="text-emerald-600 dark:text-emerald-400">GATE</span>
               </h1>
-              <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                Enterprise
-              </span>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-1.5 mt-0.5 font-medium">
+                <span>Heavy Tipper Gate</span>
+                <span>•</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">No Login Needed</span>
+              </p>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-              <span>Main Gate Operations</span>
-              <span>•</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Fast Staff Access</span>
-            </p>
           </div>
-        </div>
 
-        {/* Top Right: Theme Toggle + Admin Login / Status */}
-        <div className="flex items-center space-x-2">
-          {/* Light / Dark Mode Toggle */}
-          <ThemeToggle />
+          {/* Top Right: Theme Toggle + Admin Login / Status */}
+          <div className="flex items-center space-x-2">
+            {/* Light / Dark Mode Toggle */}
+            <ThemeToggle className="w-9 h-9" />
 
-          {isAdmin ? (
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-bold hidden sm:inline px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
-                Administrator
-              </span>
+            {isAdmin ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-bold hidden sm:inline px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
+                  Administrator
+                </span>
+                <button
+                  onClick={logout}
+                  className="h-9 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs flex items-center"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={logout}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs"
+                onClick={() => setIsAdminModalOpen(true)}
+                className="h-9 flex items-center space-x-1.5 px-3.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-500/40 text-xs font-extrabold shadow-xs transition active:scale-95"
               >
-                Logout
+                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Admin Login</span>
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsAdminModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/40 text-xs font-bold shadow-xs transition active:scale-95"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Admin Login</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
@@ -279,13 +276,13 @@ export const StaffSimpleScreen = () => {
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 space-y-4">
 
         {/* Real-Time Shared Cloud Sync Status Bar */}
-        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between text-slate-700 dark:text-slate-300 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between text-slate-700 dark:text-slate-300 shadow-xs">
           <div className="flex items-center space-x-2.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${syncStatus === 'live' ? 'bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20' : syncStatus === 'syncing' ? 'bg-amber-500 animate-spin' : 'bg-rose-500'}`} />
+            <span className={`w-2.5 h-2.5 rounded-full ${syncStatus === 'live' ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse ring-4 ring-emerald-500/20' : syncStatus === 'syncing' ? 'bg-amber-500 animate-spin' : 'bg-rose-500'}`} />
             <span className="font-semibold text-xs">
               {syncStatus === 'live' ? (
                 <span className="text-slate-800 dark:text-emerald-400 font-bold flex items-center">
-                  Live Cloud Database Active <span className="ml-1 text-[11px] text-slate-500 dark:text-slate-400 font-normal hidden sm:inline">(MongoDB Atlas Auto-Sync)</span>
+                  Shared Cloud Database Active <span className="ml-1 text-[11px] text-slate-500 dark:text-slate-400 font-normal hidden sm:inline">(Auto-syncs all mobile devices)</span>
                 </span>
               ) : syncStatus === 'syncing' ? (
                 <span className="text-amber-600 dark:text-amber-400 font-semibold">Syncing with Cloud...</span>
@@ -342,7 +339,7 @@ export const StaffSimpleScreen = () => {
         )}
 
         {/* LORRY ENTRY FORM: LORRY NUMBER, REMARKS (OPTIONAL), AND IN BUTTON */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
           <form onSubmit={handleRecordIn} className="space-y-4">
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -385,7 +382,7 @@ export const StaffSimpleScreen = () => {
                     const formatted = formatLorryNumber(raw);
                     setLorryNumber(formatted === 'TN' ? 'TN ' : formatted);
                   }}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-3 text-base sm:text-lg font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-base sm:text-lg font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-xs transition-colors"
                 />
 
                 {/* INTIMATION BANNER FOR 2nd TRIP / RETURNING LORRY */}
@@ -425,7 +422,7 @@ export const StaffSimpleScreen = () => {
                   placeholder="e.g. Driver Kumar / Sand load / Empty (Optional)"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-3 text-base font-medium text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-base font-medium text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-xs transition-colors"
                 />
               </div>
 
@@ -435,12 +432,12 @@ export const StaffSimpleScreen = () => {
             <button
               type="submit"
               disabled={isSubmitting || !lorryNumber.trim() || duplicateCheck.isInside}
-              className={`w-full py-3.5 rounded-xl text-base font-extrabold shadow-sm transition active:scale-[0.99] ${
+              className={`w-full py-3.5 rounded-xl text-base font-black shadow-md transition active:scale-[0.99] ${
                 !lorryNumber.trim() || duplicateCheck.isInside
                   ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
                   : tripInfo.isReturning
-                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-amber-500/20'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white font-black shadow-emerald-600/20'
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+                    : 'bg-emerald-600 hover:bg-emerald-500 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-500 hover:dark:from-emerald-500 hover:dark:to-emerald-400 text-white shadow-emerald-600/20 dark:shadow-emerald-950/60'
               }`}
             >
               {lorryNumber.trim().length >= 4 && tripInfo.nextTripNumber > 1

@@ -243,49 +243,51 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none pb-12 transition-colors duration-200">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none pb-12 transition-colors duration-200">
       
       {/* Top Header */}
-      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <TipperTruckIcon className="w-5 h-5" />
+      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors">
+        <div className="max-w-6xl w-full mx-auto px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 border border-emerald-500/40 flex items-center justify-center text-white shadow-md">
+              <TipperTruckIcon className="w-5 h-5 text-emerald-300" />
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold tracking-wider text-slate-900 dark:text-white leading-none">
+                FLEET <span className="text-emerald-600 dark:text-emerald-400">GATE</span>
+              </h1>
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">Admin Console</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-extrabold tracking-wider text-slate-900 dark:text-white">
-              FLEET <span className="text-emerald-600 dark:text-emerald-400">GATE</span>
-            </h1>
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">Admin Console</p>
+
+          <div className="flex items-center space-x-2 sm:space-x-2.5">
+            {/* Theme Toggle */}
+            <ThemeToggle className="w-9 h-9" />
+
+            <button
+              onClick={() => refreshData()}
+              disabled={isSyncing}
+              className="h-9 flex items-center space-x-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
+              title="Refresh shared database"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+            </button>
+            <button
+              onClick={onOpenStaffView}
+              className="h-9 flex items-center space-x-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Staff Entry Screen</span>
+            </button>
+            <button
+              onClick={logout}
+              className="h-9 flex items-center space-x-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Theme Toggle */}
-          <ThemeToggle />
-
-          <button
-            onClick={() => refreshData()}
-            disabled={isSyncing}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
-            title="Refresh shared database"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
-          </button>
-          <button
-            onClick={onOpenStaffView}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition shadow-xs"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Staff Entry Screen</span>
-          </button>
-          <button
-            onClick={logout}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition shadow-xs"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
-          </button>
         </div>
       </header>
 
