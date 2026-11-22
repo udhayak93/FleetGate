@@ -124,7 +124,22 @@ function normalizeVehicle(v) {
 function serializeDoc(doc) {
   if (!doc) return null;
   const { _id, ...rest } = doc;
-  return { ...rest, _id: _id?.toString() };
+  const entryTime = rest.entry_time || rest.in_time;
+  const exitTime = rest.exit_time || rest.out_time;
+  const isInside = rest.status === 'inside' || rest.status === 'IN' || rest.is_active_inside || !exitTime;
+  const rawPlate = rest.plate_number || rest.vehicle_number || '';
+  return {
+    ...rest,
+    _id: _id?.toString(),
+    entry_time: entryTime ? new Date(entryTime).toISOString() : null,
+    in_time: entryTime ? new Date(entryTime).toISOString() : null,
+    exit_time: exitTime ? new Date(exitTime).toISOString() : null,
+    out_time: exitTime ? new Date(exitTime).toISOString() : null,
+    plate_number: rawPlate,
+    vehicle_number: rawPlate,
+    is_active_inside: Boolean(isInside),
+    status: isInside ? 'inside' : 'exited',
+  };
 }
 
 // ── Route Handler ─────────────────────────────────────────────────────────────
@@ -240,23 +255,39 @@ async function handleAPI(req, res) {
   // ── Vehicle IN (Entry)
   if (path_ === '/api/movements/in' && method === 'POST') {
     const body = await readBody(req);
-    const vehicleNumber = normalizeVehicle(body.vehicleNumber || body.vehicle_number);
-    if (!vehicleNumber) return json(res, 400, { success: false, error: 'Vehicle number required' });
+    const rawPlate = body.plate_number || body.plateNumber || body.vehicleNumber || body.vehicle_number || '';
+    const compactPlate = normalizeVehicle(rawPlate);
+    if (!compactPlate) return json(res, 400, { success: false, error: 'Vehicle number required' });
 
     // Check for open visit
-    const open = await movementsCol.findOne({ vehicle_number: vehicleNumber, status: 'inside' });
-    if (open) return json(res, 409, { success: false, error: `${vehicleNumber} already inside (since ${new Date(open.entry_time).toLocaleTimeString('en-IN')})` });
+    const open = await movementsCol.findOne({
+      $or: [
+        { compact_plate: compactPlate },
+        { vehicle_number: compactPlate },
+        { plate_number: rawPlate.trim() }
+      ],
+      status: 'inside'
+    });
+    if (open) {
+      return json(res, 409, {
+        success: false,
+        error: `${rawPlate.trim()} already inside (since ${new Date(open.entry_time).toLocaleTimeString('en-IN')})`
+      });
+    }
 
-    const entryTime = body.entryTime || body.entry_time || new Date().toISOString();
+    const entryTime = body.entryTime || body.entry_time || body.in_time || new Date().toISOString();
     const movement = {
       id: randomUUID(),
-      vehicle_number: vehicleNumber,
+      compact_plate: compactPlate,
+      vehicle_number: compactPlate,
+      plate_number: rawPlate.trim(),
       entry_time: new Date(entryTime),
       exit_time: null,
-      remarks: (body.remarks || body.entryNotes || '').trim(),
+      remarks: (body.remarks || body.entryNotes || body.entry_notes || '').trim(),
       entry_gate: body.entryGate || 'Main Gate',
       exit_gate: null,
       status: 'inside',
+      is_active_inside: true,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -269,24 +300,55 @@ async function handleAPI(req, res) {
   // ── Vehicle OUT (Exit)
   if (path_ === '/api/movements/out' && method === 'POST') {
     const body = await readBody(req);
-    const { movementId } = body;
+    const movementId = body.movementId || body.movement_id || body.id;
     if (!movementId) return json(res, 400, { success: false, error: 'movementId required' });
 
     const movement = await movementsCol.findOne({ id: movementId });
     if (!movement) return json(res, 404, { success: false, error: 'Movement not found' });
-    if (movement.status === 'exited') return json(res, 409, { success: false, error: 'Already exited' });
+    if (movement.status === 'exited' || movement.exit_time) {
+      return json(res, 409, { success: false, error: 'Already exited' });
+    }
 
-    const exitTime = body.exitTime || body.exit_time || new Date().toISOString();
+    const exitTime = body.exitTime || body.exit_time || body.out_time || new Date().toISOString();
     const updateData = {
       exit_time: new Date(exitTime),
       exit_gate: body.exitGate || 'Main Gate',
       status: 'exited',
+      is_active_inside: false,
       updated_at: new Date(),
     };
 
     await movementsCol.updateOne({ id: movementId }, { $set: updateData });
     const updated = await movementsCol.findOne({ id: movementId });
     broadcast('movement_update', { type: 'exit', movement: serializeDoc(updated) });
+    return json(res, 200, { success: true, movement: serializeDoc(updated) });
+  }
+
+  // ── Update Movement (admin)
+  if (path_.startsWith('/api/movements/') && method === 'PUT') {
+    const id = path_.split('/')[3];
+    const body = await readBody(req);
+    const mov = await movementsCol.findOne({ id });
+    if (!mov) return json(res, 404, { success: false, error: 'Not found' });
+
+    const updateData = { updated_at: new Date() };
+    if (body.plate_number || body.vehicle_number) {
+      const p = body.plate_number || body.vehicle_number;
+      updateData.plate_number = p.trim();
+      updateData.compact_plate = normalizeVehicle(p);
+      updateData.vehicle_number = normalizeVehicle(p);
+    }
+    if (body.remarks !== undefined) updateData.remarks = body.remarks.trim();
+    if (body.in_time || body.entry_time) updateData.entry_time = new Date(body.in_time || body.entry_time);
+    if (body.out_time || body.exit_time) {
+      updateData.exit_time = new Date(body.out_time || body.exit_time);
+      updateData.status = 'exited';
+      updateData.is_active_inside = false;
+    }
+
+    await movementsCol.updateOne({ id }, { $set: updateData });
+    const updated = await movementsCol.findOne({ id });
+    broadcast('movement_update', { type: 'update', movement: serializeDoc(updated) });
     return json(res, 200, { success: true, movement: serializeDoc(updated) });
   }
 

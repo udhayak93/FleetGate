@@ -47,17 +47,26 @@ export const LorryDataProvider = ({ children }) => {
         const data = await res.json();
         if (data.success && Array.isArray(data.movements)) {
           // Normalize server fields to match UI expectations
-          const normalized = data.movements.map(m => ({
-            ...m,
-            // Ensure compatibility with existing component prop names
-            entry_time: m.in_time,
-            exit_time: m.out_time,
-            remarks: m.remarks || '',
-            entry_notes: m.remarks || '',
-            exit_notes: m.remarks || '',
-            plate_number: m.plate_number || m.vehicle_number,
-            status: m.is_active_inside ? 'IN' : 'OUT'
-          }));
+          const normalized = data.movements.map(m => {
+            const entryTime = m.entry_time || m.in_time;
+            const exitTime = m.exit_time || m.out_time;
+            const isInside = m.status === 'inside' || m.status === 'IN' || m.is_active_inside || !exitTime;
+            const rawPlate = m.plate_number || m.vehicle_number || '';
+            return {
+              ...m,
+              entry_time: entryTime,
+              in_time: entryTime,
+              exit_time: exitTime,
+              out_time: exitTime,
+              remarks: m.remarks || m.entry_notes || '',
+              entry_notes: m.remarks || m.entry_notes || '',
+              exit_notes: m.exit_remarks || m.exit_notes || '',
+              plate_number: rawPlate,
+              vehicle_number: rawPlate,
+              is_active_inside: Boolean(isInside),
+              status: isInside ? 'IN' : 'OUT'
+            };
+          });
 
           setMovements(normalized);
           setSyncStatus('live');
@@ -255,7 +264,11 @@ export const LorryDataProvider = ({ children }) => {
         },
         body: JSON.stringify({
           plate_number: normPlate,
+          plateNumber: normPlate,
+          vehicle_number: normPlate,
+          vehicleNumber: normPlate,
           remarks: (data.remarks || data.entryNotes || '').trim(),
+          entryTime: data.entryTime,
           created_by: profile?.full_name || 'Staff'
         })
       });
@@ -296,8 +309,12 @@ export const LorryDataProvider = ({ children }) => {
           ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify({
+          movementId: movementId,
           movement_id: movementId,
+          id: movementId,
           plate_number: rawPlate,
+          vehicle_number: rawPlate,
+          exitTime: data.exitTime,
           remarks: (data.exitRemarks || data.exitNotes || data.remarks || '').trim()
         })
       });
