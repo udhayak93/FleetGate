@@ -191,12 +191,17 @@ async function handleAPI(req, res) {
   // ── Auth Login
   if (path_ === '/api/auth/login' && method === 'POST') {
     const { email, password } = await readBody(req);
-    const user = await staffCol.findOne({ email: email?.toLowerCase?.().trim() });
-    if (!user || user.password !== password) {
+    const cleanEmail = email?.toLowerCase?.().trim();
+    const cleanPass = password?.trim();
+    const user = await staffCol.findOne({ email: cleanEmail });
+    if (!user || user.password !== cleanPass) {
       return json(res, 401, { success: false, error: 'Invalid email or password' });
     }
     const { password: _, ...safeUser } = user;
-    return json(res, 200, { success: true, user: serializeDoc(safeUser) });
+    safeUser.is_active = true;
+    safeUser.role = safeUser.role || 'admin';
+    const token = `fg_tok_${randomUUID()}`;
+    return json(res, 200, { success: true, user: safeUser, token });
   }
 
   // ── Staff List (admin only — no auth check here, frontend handles it)
