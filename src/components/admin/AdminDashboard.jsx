@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLorryData } from '../../context/LorryDataContext';
 import { format, isToday } from 'date-fns';
-import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
+import { formatLorryNumber, formatStrictLorryNumber, isValidLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { 
@@ -699,7 +699,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                   type="text"
                   required
                   value={movementForm.plate_number}
-                  onChange={(e) => setMovementForm({ ...movementForm, plate_number: formatLorryNumber(e.target.value) })}
+                  onChange={(e) => setMovementForm({ ...movementForm, plate_number: formatStrictLorryNumber(e.target.value) })}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
                 />
               </div>

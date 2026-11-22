@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useLorryData } from '../../context/LorryDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { format, isToday } from 'date-fns';
-import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
+import { formatLorryNumber, formatStrictLorryNumber, isValidLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
 import { Lock, Shield, X, Eye, EyeOff, RefreshCw, CheckCircle2, Search } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -38,6 +38,9 @@ export const StaffSimpleScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [adminLoginError, setAdminLoginError] = useState(null);
   const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
+
+  // Check strict format: TN + 2 digits + 1-2 letters + 4 digits
+  const isValidPlate = isValidLorryNumber(lorryNumber);
 
   // Check if entered lorry is currently inside
   const duplicateCheck = checkLorryInsideStatus(lorryNumber);
@@ -143,9 +146,9 @@ export const StaffSimpleScreen = () => {
     setErrorMsg(null);
     setLastSavedInTime(null);
 
-    const normPlate = formatLorryNumber(lorryNumber);
-    if (!normPlate || normPlate.replace(/\s+/g, '') === 'TN') {
-      setErrorMsg('Please enter Lorry Number after TN (e.g. TN 20 CH 2023).');
+    const normPlate = formatStrictLorryNumber(lorryNumber);
+    if (!isValidLorryNumber(normPlate)) {
+      setErrorMsg('Strict format required: TN [2 Digits] [1-2 Letters] [4 Digits] (e.g. TN 20 BV 4231 or TN 21 H 1234).');
       return;
     }
 
@@ -378,7 +381,7 @@ export const StaffSimpleScreen = () => {
                   type="text"
                   required
                   autoFocus
-                  placeholder="TN 20 CH 2023"
+                  placeholder="TN 20 BV 4231"
                   value={lorryNumber}
                   onFocus={(e) => {
                     if (e.target.value === 'TN ') {
@@ -387,18 +390,39 @@ export const StaffSimpleScreen = () => {
                   }}
                   onChange={(e) => {
                     const val = e.target.value;
-                    let raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                    if (!raw.startsWith('TN')) {
-                      raw = 'TN' + raw;
+                    if (!val || val.trim() === '' || val.trim() === 'TN') {
+                      setLorryNumber('TN ');
+                      return;
                     }
-                    const formatted = formatLorryNumber(raw);
+                    const formatted = formatStrictLorryNumber(val);
                     setLorryNumber(formatted === 'TN' ? 'TN ' : formatted);
                   }}
-                  className="w-full bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-base sm:text-lg font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-xs transition-colors"
+                  className={`w-full bg-white dark:bg-slate-950 border-2 rounded-xl px-3.5 py-3 text-base sm:text-lg font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none shadow-xs transition-colors ${
+                    isValidPlate
+                      ? 'border-emerald-500 dark:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10'
+                  }`}
                 />
 
+                {/* Strict Format Progress & Indicator (PAN card style) */}
+                <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                  {isValidPlate ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Strict Format Complete</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      Must be: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">TN [2 Digits] [1-2 Letters] [4 Digits]</span>
+                    </span>
+                  )}
+                  <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                    e.g. TN 20 BV 4231
+                  </span>
+                </div>
+
                 {/* INTIMATION BANNER FOR 2nd TRIP / RETURNING LORRY */}
-                {lorryNumber.trim().length >= 4 && tripInfo.isReturning && !duplicateCheck.isInside && (
+                {isValidPlate && tripInfo.isReturning && !duplicateCheck.isInside && (
                   <div className="mt-2 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-500/50 rounded-xl px-3 py-2 text-xs flex items-center justify-between text-amber-900 dark:text-amber-300 font-medium">
                     <div className="flex items-center space-x-2">
                       <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
@@ -414,7 +438,7 @@ export const StaffSimpleScreen = () => {
                 )}
 
                 {/* DUPLICATE ACTIVE IN NOTICE */}
-                {lorryNumber.trim().length >= 4 && duplicateCheck.isInside && (
+                {isValidPlate && duplicateCheck.isInside && (
                   <div className="mt-2 bg-rose-50 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-500/60 rounded-xl px-3 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
                     ⚠️ Already Inside: Lorry {lorryNumber} is currently inside. Tap <strong>OUT</strong> below before recording next trip.
                   </div>
@@ -440,21 +464,31 @@ export const StaffSimpleScreen = () => {
 
             </div>
 
-            {/* IN Button - intimates trip number dynamically */}
+            {/* IN Button - strictly requires valid format to proceed */}
             <button
               type="submit"
-              disabled={isSubmitting || !lorryNumber.trim() || duplicateCheck.isInside}
-              className={`w-full py-3.5 rounded-xl text-base font-black shadow-md transition active:scale-[0.99] ${
-                !lorryNumber.trim() || duplicateCheck.isInside
+              disabled={isSubmitting || !isValidPlate || duplicateCheck.isInside}
+              className={`w-full py-3.5 rounded-xl text-base font-black shadow-md transition active:scale-[0.99] flex items-center justify-center space-x-2 ${
+                !isValidPlate || duplicateCheck.isInside
                   ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
                   : tripInfo.isReturning
                     ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
                     : 'bg-emerald-600 hover:bg-emerald-500 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-500 hover:dark:from-emerald-500 hover:dark:to-emerald-400 text-white shadow-emerald-600/20 dark:shadow-emerald-950/60'
               }`}
             >
-              {lorryNumber.trim().length >= 4 && tripInfo.nextTripNumber > 1
-                ? `IN (${getTripLabel(tripInfo.nextTripNumber)})`
-                : 'IN'}
+              {!isValidPlate ? (
+                <span>
+                  {lorryNumber.trim() === 'TN' || !lorryNumber.trim()
+                    ? 'IN — Enter Lorry Number'
+                    : 'IN — Complete 4-Digit Number Required'}
+                </span>
+              ) : duplicateCheck.isInside ? (
+                <span>Vehicle Already Inside (Tap OUT below)</span>
+              ) : tripInfo.isReturning ? (
+                <span>IN ({getTripLabel(tripInfo.nextTripNumber)})</span>
+              ) : (
+                <span>IN</span>
+              )}
             </button>
 
           </form>
