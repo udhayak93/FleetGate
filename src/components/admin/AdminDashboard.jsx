@@ -330,7 +330,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>Staff Database ({allStaff.filter(s => s.role !== 'admin' && s.email !== 'admin@gmail.com').length})</span>
+            <span>Staff Database ({allStaff.length})</span>
           </button>
         </div>
       </div>
@@ -611,21 +611,29 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                    {allStaff.filter(s => s.role !== 'admin' && s.email !== 'admin@gmail.com').length === 0 ? (
+                    {allStaff.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                           No staff accounts yet. Click "Add New Staff" to add gate staff.
                         </td>
                       </tr>
                     ) : (
-                      allStaff.filter(s => s.role !== 'admin' && s.email !== 'admin@gmail.com').map((staff) => {
+                      allStaff.map((staff) => {
                         const isActive = staff.is_active !== false;
+                        const isMasterAdmin = staff.email === 'admin@gmail.com';
 
                         return (
                           <tr key={staff.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                             {/* Name */}
                             <td className="py-3 px-3 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                              <span>{staff.full_name}</span>
+                              <div className="flex items-center space-x-2">
+                                <span>{staff.full_name || staff.name}</span>
+                                {isMasterAdmin && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+                                    Primary Admin
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                           {/* Email */}
@@ -666,13 +674,19 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
                               
-                              <button
-                                onClick={() => setDeletingStaffId(staff.id)}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 transition"
-                                title="Delete Staff"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {!isMasterAdmin ? (
+                                <button
+                                  onClick={() => setDeletingStaffId(staff.id)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 transition"
+                                  title="Delete Staff"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <span className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed" title="Master admin cannot be deleted">
+                                  <Shield className="w-3.5 h-3.5" />
+                                </span>
+                              )}
                             </div>
                           </td>
                         </tr>
