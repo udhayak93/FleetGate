@@ -590,10 +590,10 @@ export const StaffSimpleScreen = () => {
               <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by 4 digits (e.g. 4231)"
+                placeholder="Search 4 digits (e.g. 5432)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
               />
               {searchQuery && (
                 <button
