@@ -3,7 +3,7 @@ import { useLorryData } from '../../context/LorryDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { format, isToday } from 'date-fns';
 import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
-import { Lock, Shield, X, Eye, EyeOff, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Lock, Shield, X, Eye, EyeOff, RefreshCw, CheckCircle2, Search } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
 
@@ -26,6 +26,7 @@ export const StaffSimpleScreen = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [lastSavedInTime, setLastSavedInTime] = useState(null);
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'MULTI_TRIP' | 'INSIDE'
+  const [searchQuery, setSearchQuery] = useState(''); // Lorry Search Field state
 
   // State for Check-Out (OUT) Modal
   const [exitModalMovement, setExitModalMovement] = useState(null);
@@ -98,19 +99,30 @@ export const StaffSimpleScreen = () => {
     };
   }, [staffDayMovements]);
 
-  // Filtered movements for display based on staff filter selection
+  // Filtered movements for display based on staff filter selection and lorry search
   const displayedMovements = useMemo(() => {
+    let list = staffDayMovements;
+
     if (activeFilter === 'MULTI_TRIP') {
-      return staffDayMovements.filter(m => {
+      list = list.filter(m => {
         const compact = (m.plate_number || '').toUpperCase().replace(/\s+/g, '');
         return (tripStats.multiTripVehiclesMap[compact] || 0) >= 2;
       });
+    } else if (activeFilter === 'INSIDE') {
+      list = list.filter(m => m.is_active_inside && m.status === 'IN');
     }
-    if (activeFilter === 'INSIDE') {
-      return staffDayMovements.filter(m => m.is_active_inside && m.status === 'IN');
+
+    if (searchQuery && searchQuery.trim() && searchQuery.trim() !== 'TN') {
+      const cleanSearch = searchQuery.toUpperCase().replace(/\s+/g, '');
+      list = list.filter(m => {
+        const plateCompact = (m.plate_number || m.vehicle_number || '').toUpperCase().replace(/\s+/g, '');
+        const plateFormatted = (m.plate_number || m.vehicle_number || '').toUpperCase();
+        return plateCompact.includes(cleanSearch) || plateFormatted.includes(searchQuery.toUpperCase().trim());
+      });
     }
-    return staffDayMovements;
-  }, [staffDayMovements, activeFilter, tripStats.multiTripVehiclesMap]);
+
+    return list;
+  }, [staffDayMovements, activeFilter, tripStats.multiTripVehiclesMap, searchQuery]);
 
   // Helper to determine exact trip number for any row
   const getMovementTripNumber = (mov) => {
@@ -558,18 +570,66 @@ export const StaffSimpleScreen = () => {
         {/* RECORD DISPLAY TABLE */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-colors">
           
-          {/* Table Header Filter indicator */}
-          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px]">
-              {activeFilter === 'MULTI_TRIP' 
-                ? 'Filtered: Vehicles with 2+ Trips Only' 
-                : activeFilter === 'INSIDE' 
-                  ? 'Filtered: Inside Now Only' 
-                  : "Today's Lorry Records"}
-            </span>
-            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-              Showing {displayedMovements.length} of {tripStats.totalTripsCount}
-            </span>
+          {/* Table Header Filter indicator & Search */}
+          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2.5">
+              <span className="text-slate-800 dark:text-slate-200 font-extrabold uppercase tracking-wider text-[11px] sm:text-xs whitespace-nowrap">
+                {activeFilter === 'MULTI_TRIP' 
+                  ? 'Filtered: Vehicles with 2+ Trips Only' 
+                  : activeFilter === 'INSIDE' 
+                    ? 'Filtered: Inside Now Only' 
+                    : "Today's Lorry Records"}
+              </span>
+              <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-300/60 dark:border-slate-700/80">
+                {displayedMovements.length} of {tripStats.totalTripsCount}
+              </span>
+            </div>
+
+            {/* Lorry Search Field: Follows exact same LORRY NUMBER auto-prefix & auto-spacing rules */}
+            <div className="relative flex items-center w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search Lorry (e.g. TN 20)"
+                value={searchQuery}
+                onFocus={(e) => {
+                  if (!searchQuery) {
+                    setSearchQuery('TN ');
+                  } else if (e.target.value === 'TN ') {
+                    e.target.setSelectionRange(3, 3);
+                  }
+                }}
+                onBlur={() => {
+                  if (searchQuery.trim() === 'TN' || searchQuery.trim() === '') {
+                    setSearchQuery('');
+                  }
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val || val.trim() === '') {
+                    setSearchQuery('');
+                    return;
+                  }
+                  let raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                  if (!raw.startsWith('TN')) {
+                    raw = 'TN' + raw;
+                  }
+                  const formatted = formatLorryNumber(raw);
+                  setSearchQuery(formatted === 'TN' ? 'TN ' : formatted);
+                }}
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -586,7 +646,23 @@ export const StaffSimpleScreen = () => {
                 {displayedMovements.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-normal">
-                      {activeFilter === 'MULTI_TRIP'
+                      {searchQuery && searchQuery.trim() !== 'TN' ? (
+                        <div className="space-y-1.5">
+                          <p>
+                            No lorry records found matching{' '}
+                            <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                              "{searchQuery.trim()}"
+                            </span>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition"
+                          >
+                            <span>Clear Search</span>
+                          </button>
+                        </div>
+                      ) : activeFilter === 'MULTI_TRIP'
                         ? 'No vehicles have completed 2 or more trips yet today.'
                         : activeFilter === 'INSIDE'
                           ? 'No lorries currently inside the facility.'
