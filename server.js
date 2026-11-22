@@ -60,12 +60,30 @@ async function connectDB() {
     await staffCol.insertOne({
       id: randomUUID(),
       name: 'Admin',
+      full_name: 'Admin',
       email: ADMIN_EMAIL,
       password: ADMIN_PASS,
       role: 'admin',
+      is_active: true,
       created_at: new Date(),
     });
     console.log('✅ Admin account seeded');
+  }
+
+  // Seed default gate staff if not exists
+  const staffExists = await staffCol.findOne({ email: 'staff@fleetgate.com' });
+  if (!staffExists) {
+    await staffCol.insertOne({
+      id: randomUUID(),
+      name: 'Gate Security Staff',
+      full_name: 'Gate Security Staff',
+      email: 'staff@fleetgate.com',
+      password: 'Staff@123',
+      role: 'staff',
+      is_active: true,
+      created_at: new Date(),
+    });
+    console.log('✅ Default Gate Security account seeded');
   }
 
   console.log(`✅ MongoDB connected → database: "${DB_NAME}"`);
@@ -370,6 +388,23 @@ function serializeDoc(doc) {
   };
 }
 
+function serializeStaffDoc(doc) {
+  if (!doc) return null;
+  const { _id, password, ...rest } = doc;
+  const fullName = rest.full_name || rest.name || 'Gate Staff';
+  return {
+    ...rest,
+    _id: _id?.toString(),
+    id: rest.id || _id?.toString(),
+    name: fullName,
+    full_name: fullName,
+    email: rest.email || '',
+    role: rest.role || 'staff',
+    is_active: rest.is_active !== false,
+    created_at: rest.created_at ? new Date(rest.created_at).toISOString() : new Date().toISOString()
+  };
+}
+
 // ── Route Handler ─────────────────────────────────────────────────────────────
 async function handleAPI(req, res) {
   const url    = new URL(req.url, `http://localhost`);
@@ -432,32 +467,91 @@ async function handleAPI(req, res) {
     return json(res, 200, { success: true, user: safeUser, token });
   }
 
-  // ── Staff List (admin only — no auth check here, frontend handles it)
+  // ── Staff List (admin only — returns live list from MongoDB Atlas)
   if (path_ === '/api/staff' && method === 'GET') {
-    const staff = await staffCol.find({}).toArray();
+    const staff = await staffCol.find({}).sort({ created_at: -1 }).toArray();
     return json(res, 200, {
       success: true,
-      staff: staff.map(s => { const { password: _, ...rest } = s; return serializeDoc(rest); }),
+      staff: staff.map(serializeStaffDoc),
     });
   }
 
   // ── Add Staff Member
   if (path_ === '/api/staff' && method === 'POST') {
-    const { name, email, password, role } = await readBody(req);
-    if (!name || !email || !password) return json(res, 400, { success: false, error: 'name, email, password required' });
-    const existing = await staffCol.findOne({ email: email.toLowerCase().trim() });
-    if (existing) return json(res, 409, { success: false, error: 'Email already exists' });
+    const body = await readBody(req);
+    const name = (body.fullName || body.full_name || body.name || '').trim();
+    const email = (body.email || '').toLowerCase().trim();
+    const password = (body.password || 'StaffPass@123').trim();
+    const role = body.role === 'admin' ? 'admin' : 'staff';
+    const is_active = body.isActive !== undefined ? Boolean(body.isActive) : (body.is_active !== undefined ? Boolean(body.is_active) : true);
+
+    if (!name || !email) {
+      return json(res, 400, { success: false, error: 'Full name and email are required' });
+    }
+
+    const existing = await staffCol.findOne({ email });
+    if (existing) {
+      return json(res, 409, { success: false, error: 'A staff member with this email already exists' });
+    }
+
     const member = {
       id: randomUUID(),
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
+      name,
+      full_name: name,
+      email,
       password,
-      role: role === 'admin' ? 'admin' : 'staff',
+      role,
+      is_active,
       created_at: new Date(),
+      updated_at: new Date(),
     };
+
     await staffCol.insertOne(member);
-    const { password: _, ...safe } = member;
+    const safe = serializeStaffDoc(member);
+    broadcast('staff_update', { type: 'add', staff: safe });
+    broadcast('SYNC', { entity: 'staff' });
     return json(res, 201, { success: true, member: safe });
+  }
+
+  // ── Update Staff Member (PUT)
+  if (path_.startsWith('/api/staff/') && method === 'PUT') {
+    const id = path_.split('/')[3];
+    const body = await readBody(req);
+    const member = await staffCol.findOne({ id });
+    if (!member) {
+      return json(res, 404, { success: false, error: 'Staff member not found' });
+    }
+
+    const updateData = { updated_at: new Date() };
+    const name = (body.fullName || body.full_name || body.name || '').trim();
+    if (name) {
+      updateData.name = name;
+      updateData.full_name = name;
+    }
+    if (body.email) {
+      const email = body.email.toLowerCase().trim();
+      const duplicate = await staffCol.findOne({ email, id: { $ne: id } });
+      if (duplicate) {
+        return json(res, 409, { success: false, error: 'Email already in use by another account' });
+      }
+      updateData.email = email;
+    }
+    if (body.password && body.password.trim()) {
+      updateData.password = body.password.trim();
+    }
+    if (body.role) {
+      updateData.role = body.role === 'admin' ? 'admin' : 'staff';
+    }
+    if (body.isActive !== undefined || body.is_active !== undefined) {
+      updateData.is_active = body.isActive !== undefined ? Boolean(body.isActive) : Boolean(body.is_active);
+    }
+
+    await staffCol.updateOne({ id }, { $set: updateData });
+    const updated = await staffCol.findOne({ id });
+    const safe = serializeStaffDoc(updated);
+    broadcast('staff_update', { type: 'update', staff: safe });
+    broadcast('SYNC', { entity: 'staff' });
+    return json(res, 200, { success: true, member: safe });
   }
 
   // ── Delete Staff
@@ -465,8 +559,12 @@ async function handleAPI(req, res) {
     const id = path_.split('/')[3];
     const member = await staffCol.findOne({ id });
     if (!member) return json(res, 404, { success: false, error: 'Staff member not found' });
-    if (member.role === 'admin') return json(res, 403, { success: false, error: 'Cannot delete admin' });
+    if (member.role === 'admin' && member.email === ADMIN_EMAIL) {
+      return json(res, 403, { success: false, error: 'Cannot delete primary admin account' });
+    }
     await staffCol.deleteOne({ id });
+    broadcast('staff_update', { type: 'delete', id });
+    broadcast('SYNC', { entity: 'staff' });
     return json(res, 200, { success: true });
   }
 

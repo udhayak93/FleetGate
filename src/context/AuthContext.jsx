@@ -57,6 +57,41 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     refreshStaffList();
+
+    // Connect to SSE stream for instant live staff updates across all devices
+    let eventSource = null;
+    let pollInterval = null;
+
+    try {
+      eventSource = new EventSource('/api/events');
+      eventSource.addEventListener('staff_update', () => {
+        refreshStaffList();
+      });
+      eventSource.addEventListener('SYNC', () => {
+        refreshStaffList();
+      });
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'SYNC' || payload.entity === 'staff') {
+            refreshStaffList();
+          }
+        } catch (_) {}
+      };
+      eventSource.onerror = () => {
+        if (eventSource) eventSource.close();
+      };
+    } catch (_) {}
+
+    // Safety polling every 4 seconds to guarantee all open phones/desktops stay in sync
+    pollInterval = setInterval(() => {
+      refreshStaffList();
+    }, 4000);
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [refreshStaffList]);
 
   // Persist session to local storage
