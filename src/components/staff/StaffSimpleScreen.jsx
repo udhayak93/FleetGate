@@ -112,7 +112,7 @@ export const StaffSimpleScreen = () => {
       list = list.filter(m => m.is_active_inside && m.status === 'IN');
     }
 
-    if (searchQuery && searchQuery.trim() && searchQuery.trim() !== 'TN') {
+    if (searchQuery && searchQuery.trim()) {
       const cleanSearch = searchQuery.toUpperCase().replace(/\s+/g, '');
       list = list.filter(m => {
         const plateCompact = (m.plate_number || m.vehicle_number || '').toUpperCase().replace(/\s+/g, '');
@@ -585,38 +585,14 @@ export const StaffSimpleScreen = () => {
               </span>
             </div>
 
-            {/* Lorry Search Field: Follows exact same LORRY NUMBER auto-prefix & auto-spacing rules */}
+            {/* Lorry Search Field: Search by last 4 digits or any part of the registration number */}
             <div className="relative flex items-center w-full sm:w-64">
               <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search Lorry (e.g. TN 20)"
+                placeholder="Search by 4 digits (e.g. 4231)"
                 value={searchQuery}
-                onFocus={(e) => {
-                  if (!searchQuery) {
-                    setSearchQuery('TN ');
-                  } else if (e.target.value === 'TN ') {
-                    e.target.setSelectionRange(3, 3);
-                  }
-                }}
-                onBlur={() => {
-                  if (searchQuery.trim() === 'TN' || searchQuery.trim() === '') {
-                    setSearchQuery('');
-                  }
-                }}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (!val || val.trim() === '') {
-                    setSearchQuery('');
-                    return;
-                  }
-                  let raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                  if (!raw.startsWith('TN')) {
-                    raw = 'TN' + raw;
-                  }
-                  const formatted = formatLorryNumber(raw);
-                  setSearchQuery(formatted === 'TN' ? 'TN ' : formatted);
-                }}
+                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
                 className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
               />
               {searchQuery && (
@@ -646,7 +622,7 @@ export const StaffSimpleScreen = () => {
                 {displayedMovements.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-normal">
-                      {searchQuery && searchQuery.trim() !== 'TN' ? (
+                      {searchQuery && searchQuery.trim() ? (
                         <div className="space-y-1.5">
                           <p>
                             No lorry records found matching{' '}
