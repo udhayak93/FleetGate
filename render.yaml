@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: fleetgate
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false          # You paste your Atlas URI in Render dashboard
+      - key: DB_NAME
+        value: fleetgate
+      - key: ADMIN_EMAIL
+        value: admin@gmail.com
+      - key: ADMIN_PASS
+        value: Admin@123
+      - key: NODE_ENV
+        value: production

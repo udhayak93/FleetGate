@@ -376,7 +376,7 @@ export const LorryDataProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch('/api/admin/clear-daily', { method: 'POST' });
+      const res = await fetch('/api/reset-all', { method: 'POST' });
       const result = await res.json();
       if (res.ok && result.success) {
         await refreshData();
@@ -394,7 +394,7 @@ export const LorryDataProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch('/api/admin/reset-all', { method: 'POST' });
+      const res = await fetch('/api/reset-all', { method: 'POST' });
       const result = await res.json();
       if (res.ok && result.success) {
         await refreshData();
