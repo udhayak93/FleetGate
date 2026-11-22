@@ -559,7 +559,7 @@ export const StaffSimpleScreen = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-colors">
           
           {/* Table Header Filter indicator */}
-          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-850/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px]">
               {activeFilter === 'MULTI_TRIP' 
                 ? 'Filtered: Vehicles with 2+ Trips Only' 
@@ -575,7 +575,7 @@ export const StaffSimpleScreen = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 dark:bg-slate-850 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+                <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                   <th className="py-3 px-3 sm:px-4">Lorry Number</th>
                   <th className="py-3 px-3 sm:px-4">Remarks</th>
                   <th className="py-3 px-3 sm:px-4">IN Time</th>
@@ -604,7 +604,7 @@ export const StaffSimpleScreen = () => {
                     return (
                       <tr 
                         key={mov.id} 
-                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition ${
+                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition ${
                           isPending ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : ''
                         }`}
                       >

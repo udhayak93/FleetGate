@@ -439,7 +439,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
-                    <tr className="bg-slate-100/80 dark:bg-slate-850 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+                    <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                       <th className="py-3 px-3 sm:px-4">Lorry Number</th>
                       <th className="py-3 px-3 sm:px-4">Remarks</th>
                       <th className="py-3 px-3 sm:px-4">Trip</th>
@@ -464,7 +464,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                         const tripNumber = mov.trip_number || mov.visit_number || 1;
 
                         return (
-                          <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition">
+                          <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                             {/* Plate Number */}
                             <td className="py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                               {mov.plate_number}
@@ -587,7 +587,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
-                    <tr className="bg-slate-100/80 dark:bg-slate-850 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
+                    <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                       <th className="py-3 px-3 sm:px-4">Staff Name</th>
                       <th className="py-3 px-3 sm:px-4">Email / Login ID</th>
                       <th className="py-3 px-3 sm:px-4">Role</th>
@@ -607,7 +607,7 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                         const isActive = staff.is_active !== false;
 
                         return (
-                          <tr key={staff.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition">
+                          <tr key={staff.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                             {/* Name */}
                             <td className="py-3 px-3 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
                               <span>{staff.full_name}</span>

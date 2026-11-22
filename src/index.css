@@ -25,14 +25,16 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+html.light,
 html.light body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
+html.dark,
 html.dark body {
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: #020617 !important;
+  color: #f8fafc !important;
 }
 
 /* Android & iOS Safe Area Insets for notch and bottom pill bar */
