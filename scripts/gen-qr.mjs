@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 
-const URL = 'https://liberty-lou-trailers-sonic.trycloudflare.com';
+const URL = 'https://fleetgate.onrender.com';
 
 const opts = {
   type: 'png',
@@ -13,9 +13,4 @@ const opts = {
 QRCode.toFile('public/fleet-gate-qr.png', URL, opts, (err) => {
   if (err) { console.error(err); process.exit(1); }
   console.log('✅ QR saved → public/fleet-gate-qr.png');
-});
-
-QRCode.toFile('dist/fleet-gate-qr.png', URL, opts, (err) => {
-  if (err) { console.error(err); process.exit(1); }
-  console.log('✅ QR saved → dist/fleet-gate-qr.png');
 });
