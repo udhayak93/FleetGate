@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 
-const URL = 'https://gains-dominant-largest-heater.trycloudflare.com';
+const URL = 'https://liberty-lou-trailers-sonic.trycloudflare.com';
 
 const opts = {
   type: 'png',
@@ -11,11 +11,11 @@ const opts = {
 };
 
 QRCode.toFile('public/fleet-gate-qr.png', URL, opts, (err) => {
-  if (err) { console.error('public QR error:', err); process.exit(1); }
-  console.log('✅ public/fleet-gate-qr.png generated');
+  if (err) { console.error(err); process.exit(1); }
+  console.log('✅ QR saved → public/fleet-gate-qr.png');
 });
 
 QRCode.toFile('dist/fleet-gate-qr.png', URL, opts, (err) => {
-  if (err) { console.error('dist QR error:', err); process.exit(1); }
-  console.log('✅ dist/fleet-gate-qr.png generated');
+  if (err) { console.error(err); process.exit(1); }
+  console.log('✅ QR saved → dist/fleet-gate-qr.png');
 });
