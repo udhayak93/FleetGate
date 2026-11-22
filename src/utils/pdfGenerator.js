@@ -165,49 +165,51 @@ export function generateDailyReportPDF(dailyReport) {
     }
   });
 
-  // ── Section 3: Detailed Vehicle-Wise Report Table ──
+  // ── Section 3: Vehicle-Wise Trip Summary Table ──
   const ledgerY = doc.lastAutoTable.finalY + 4;
 
   const ledgerRows = (vehicleWiseRows || []).map((v, i) => [
     `${i + 1}`,
     v.plate_number,
+    `${v.total_trips} ${v.total_trips === 1 ? 'Trip' : 'Trips'}`,
     v.remarks || '-',
-    v.trip1 !== '-' ? v.trip1 : '-',
-    v.trip2 !== '-' ? v.trip2 : '-',
-    v.trip3 !== '-' ? v.trip3 : '-',
-    v.trip4 !== '-' ? v.trip4 : (v.has5Plus ? '5+ Trips' : '-'),
-    `${v.total_trips} ${v.total_trips === 1 ? 'Trip' : 'Trips'}`
+    `${v.total_trips}`
   ]);
 
   autoTable(doc, {
     startY: ledgerY,
-    head: [['#', 'Lorry Number', 'Remarks', '1st Trip', '2nd Trip', '3rd Trip', '4th Trip', 'Total Trips']],
-    body: ledgerRows.length > 0 ? ledgerRows : [['-', 'No Records', '-', '-', '-', '-', '-', '0']],
+    head: [['#', 'Lorry Registration Number', 'Trips Completed', 'Remarks', 'Total Count']],
+    body: ledgerRows.length > 0 ? ledgerRows : [['-', 'No Records', '-', '-', '0']],
+    foot: [['', `TOTAL UNIQUE VEHICLES: ${totalUniqueVehicles}`, '', '', `TOTAL TRIPS: ${totalTrips}`]],
     theme: 'striped',
     margin: { left: 14, right: 14, bottom: 15 },
     tableWidth: pageWidth - 28,
     headStyles: {
       fillColor: [16, 185, 129], // emerald-600
       textColor: [255, 255, 255],
-      fontSize: 7.5,
+      fontSize: 8,
       fontStyle: 'bold',
       halign: 'left',
-      cellPadding: 1.8
+      cellPadding: 2
     },
     bodyStyles: {
-      fontSize: 6.8,
+      fontSize: 7.5,
       textColor: [15, 23, 42],
-      cellPadding: 1.5
+      cellPadding: 1.8
+    },
+    footStyles: {
+      fillColor: [241, 245, 249],
+      textColor: [15, 23, 42],
+      fontStyle: 'bold',
+      fontSize: 8,
+      cellPadding: 2
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 36, fontStyle: 'bold', textColor: [4, 120, 87] }, // emerald bold plate
-      2: { cellWidth: 35 },
-      3: { cellWidth: 46 },
-      4: { cellWidth: 46 },
-      5: { cellWidth: 46 },
-      6: { cellWidth: 32 },
-      7: { cellWidth: 20, fontStyle: 'bold', halign: 'center', textColor: [180, 83, 9] }
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 60, fontStyle: 'bold', textColor: [4, 120, 87] }, // emerald bold plate
+      2: { cellWidth: 50, fontStyle: 'bold' },
+      3: { cellWidth: 110 },
+      4: { cellWidth: 37, fontStyle: 'bold', halign: 'center', textColor: [180, 83, 9] }
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252]

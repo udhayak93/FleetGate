@@ -449,16 +449,16 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
           </div>
         </div>
 
-        {/* ── Sub-section 2.2: Detailed Vehicle-Wise Report Table ── */}
+        {/* ── Sub-section 2.2: Vehicle-Wise Trip Summary Table ── */}
         <div className="mt-7">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                 <Truck className="w-4 h-4 text-amber-500" />
-                <span>Vehicle-Wise Trip Ledger ({filteredVehicleRows.length} vehicles)</span>
+                <span>Vehicle-Wise Trip Summary ({filteredVehicleRows.length} vehicles)</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Detailed table showing actual IN & OUT times for 1st, 2nd, 3rd, and 4th trips.
+                Summary of vehicles, trip count, and final total count for {dailyReport.displayDate}.
               </p>
             </div>
 
@@ -480,19 +480,17 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
                 <tr>
+                  <th className="py-2.5 px-3 w-12 text-center">#</th>
                   <th className="py-2.5 px-3">Lorry Number</th>
+                  <th className="py-2.5 px-3">Trips Completed</th>
                   <th className="py-2.5 px-3">Remarks</th>
-                  <th className="py-2.5 px-3">1st Trip</th>
-                  <th className="py-2.5 px-3">2nd Trip</th>
-                  <th className="py-2.5 px-3">3rd Trip</th>
-                  <th className="py-2.5 px-3">4th Trip</th>
-                  <th className="py-2.5 px-3 text-center">Total</th>
+                  <th className="py-2.5 px-3 text-center w-28">Total Count</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
                 {filteredVehicleRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
                       No vehicle records found for {dailyReport.displayDate}.
                     </td>
                   </tr>
@@ -502,78 +500,37 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
                       key={row.compact}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
+                      {/* S.No */}
+                      <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs">
+                        {idx + 1}
+                      </td>
+
                       {/* Lorry Number */}
                       <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                        <div className="flex items-center space-x-1.5">
-                          <span>{row.plate_number}</span>
-                          {row.total_trips >= 2 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                              {row.total_trips} Trips
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-sm tracking-wide">{row.plate_number}</span>
+                      </td>
+
+                      {/* How Many Trips */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold ${
+                          row.total_trips >= 3
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                            : row.total_trips === 2
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {row.total_trips} {row.total_trips === 1 ? 'Trip' : 'Trips'}
+                        </span>
                       </td>
 
                       {/* Remarks */}
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 max-w-[140px] truncate" title={row.remarks}>
+                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate" title={row.remarks}>
                         {row.remarks || '-'}
                       </td>
 
-                      {/* 1st Trip */}
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {row.trips[0] ? (
-                          <span className="flex items-center space-x-1">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{row.trips[0].inTime}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className={row.trips[0].outTime === 'Pending' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'}>
-                              {row.trips[0].outTime}
-                            </span>
-                          </span>
-                        ) : '-'}
-                      </td>
-
-                      {/* 2nd Trip */}
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {row.trips[1] ? (
-                          <span className="flex items-center space-x-1">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{row.trips[1].inTime}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className={row.trips[1].outTime === 'Pending' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'}>
-                              {row.trips[1].outTime}
-                            </span>
-                          </span>
-                        ) : '-'}
-                      </td>
-
-                      {/* 3rd Trip */}
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {row.trips[2] ? (
-                          <span className="flex items-center space-x-1">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{row.trips[2].inTime}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className={row.trips[2].outTime === 'Pending' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'}>
-                              {row.trips[2].outTime}
-                            </span>
-                          </span>
-                        ) : '-'}
-                      </td>
-
-                      {/* 4th Trip */}
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {row.trips[3] ? (
-                          <span className="flex items-center space-x-1">
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{row.trips[3].inTime}</span>
-                            <span className="text-slate-400">→</span>
-                            <span className={row.trips[3].outTime === 'Pending' ? 'text-rose-500 font-bold' : 'text-slate-500 dark:text-slate-400'}>
-                              {row.trips[3].outTime}
-                            </span>
-                          </span>
-                        ) : '-'}
-                      </td>
-
-                      {/* Total Trips */}
-                      <td className="py-2.5 px-3 text-center font-bold text-slate-900 dark:text-white">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px]">
+                      {/* Total Count */}
+                      <td className="py-2.5 px-3 text-center font-mono font-extrabold text-slate-900 dark:text-white">
+                        <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-amber-600 dark:text-amber-400 font-black">
                           {row.total_trips}
                         </span>
                       </td>
@@ -581,6 +538,26 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
                   ))
                 )}
               </tbody>
+
+              {/* Total Count Summary Footer */}
+              {filteredVehicleRows.length > 0 && (
+                <tfoot className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700 font-bold text-xs">
+                  <tr>
+                    <td colSpan={2} className="py-3 px-3 text-slate-900 dark:text-white uppercase tracking-wider">
+                      TOTAL UNIQUE VEHICLES: <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm ml-1">{filteredVehicleRows.length}</span>
+                    </td>
+                    <td colSpan={2} className="py-3 px-3 text-slate-500 dark:text-slate-400">
+                      Summary for {dailyReport.displayDate}
+                    </td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase mr-1.5 font-bold">TOTAL TRIPS:</span>
+                      <span className="font-black text-amber-600 dark:text-amber-400 text-sm px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        {filteredVehicleRows.reduce((sum, r) => sum + r.total_trips, 0)}
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
