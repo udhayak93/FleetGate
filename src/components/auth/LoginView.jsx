@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Shield, Lock, ArrowRight, UserCheck, AlertCircle, QrCode } from 'lucide-react';
+import { Shield, Lock, ArrowRight, UserCheck, AlertCircle } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
-import { AllAccessQRModal } from '../common/AllAccessQRModal';
 
 export const LoginView = () => {
   const { login, loginAsDemoUser } = useAuth();
@@ -11,7 +10,6 @@ export const LoginView = () => {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -140,16 +138,6 @@ export const LoginView = () => {
               </button>
             </div>
             
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => setIsQRModalOpen(true)}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-bold transition shadow"
-              >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>📱 Scan QR for Phone Access</span>
-              </button>
-            </div>
           </div>
 
         </div>
@@ -161,12 +149,6 @@ export const LoginView = () => {
         </div>
 
       </div>
-
-      {/* QR Access Modal */}
-      <AllAccessQRModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-      />
 
     </div>
   );

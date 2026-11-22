@@ -159,7 +159,7 @@ export const LorryDataProvider = ({ children }) => {
   const checkLorryInsideStatus = useCallback((plateNumber) => {
     const raw = (plateNumber || '').trim().toUpperCase();
     const compact = raw.replace(/\s+/g, '');
-    if (!compact) return { isInside: false };
+    if (!compact || compact === 'TN') return { isInside: false };
 
     const active = movements.find(
       m => (m.plate_number || '').toUpperCase().replace(/\s+/g, '') === compact && m.is_active_inside
@@ -175,7 +175,7 @@ export const LorryDataProvider = ({ children }) => {
   const getLorryTripInfo = useCallback((plateNumber) => {
     const raw = (plateNumber || '').trim().toUpperCase();
     const compact = raw.replace(/\s+/g, '');
-    if (!compact) {
+    if (!compact || compact === 'TN') {
       return { totalTrips: 0, nextTripNumber: 1, isReturning: false, previousMovements: [] };
     }
 

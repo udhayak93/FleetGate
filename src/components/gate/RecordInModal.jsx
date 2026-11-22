@@ -8,7 +8,7 @@ import { formatLorryNumber } from '../../utils/vehicleFormatter';
 export const RecordInModal = ({ isOpen, onClose, prefilledPlate = '' }) => {
   const { lorries, checkLorryInsideStatus, recordEntry } = useLorryData();
 
-  const [plateNumber, setPlateNumber] = useState(prefilledPlate);
+  const [plateNumber, setPlateNumber] = useState(prefilledPlate || 'TN ');
   const [transporterName, setTransporterName] = useState('');
   const [vehicleType, setVehicleType] = useState('10-Wheeler');
   const [driverName, setDriverName] = useState('');
@@ -163,9 +163,22 @@ export const RecordInModal = ({ isOpen, onClose, prefilledPlate = '' }) => {
                   type="text"
                   required
                   autoFocus
-                  placeholder="e.g. TN 21 BV 1234"
+                  placeholder="TN 20 CH 2023"
                   value={plateNumber}
-                  onChange={(e) => setPlateNumber(formatLorryNumber(e.target.value))}
+                  onFocus={(e) => {
+                    if (e.target.value === 'TN ') {
+                      e.target.setSelectionRange(3, 3);
+                    }
+                  }}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    let raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (!raw.startsWith('TN')) {
+                      raw = 'TN' + raw;
+                    }
+                    const formatted = formatLorryNumber(raw);
+                    setPlateNumber(formatted === 'TN' ? 'TN ' : formatted);
+                  }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-sm font-mono font-bold uppercase tracking-wider text-emerald-300 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>

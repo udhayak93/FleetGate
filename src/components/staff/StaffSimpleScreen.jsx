@@ -3,9 +3,8 @@ import { useLorryData } from '../../context/LorryDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { format, isToday } from 'date-fns';
 import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
-import { Lock, Shield, X, Eye, EyeOff, QrCode, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Lock, Shield, X, Eye, EyeOff, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
-import { AllAccessQRModal } from '../common/AllAccessQRModal';
 
 export const StaffSimpleScreen = () => {
   const { 
@@ -20,7 +19,7 @@ export const StaffSimpleScreen = () => {
   } = useLorryData();
   const { login, logout, profile, isAdmin } = useAuth();
 
-  const [lorryNumber, setLorryNumber] = useState('');
+  const [lorryNumber, setLorryNumber] = useState('TN ');
   const [remarks, setRemarks] = useState(''); // Replaced Wheel Type with optional Remarks
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -32,7 +31,6 @@ export const StaffSimpleScreen = () => {
 
   // Admin Login Modal State (Staff requires NO login, only Admin needs login)
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -133,8 +131,8 @@ export const StaffSimpleScreen = () => {
     setLastSavedInTime(null);
 
     const normPlate = formatLorryNumber(lorryNumber);
-    if (!normPlate) {
-      setErrorMsg('Please enter Lorry Number.');
+    if (!normPlate || normPlate.replace(/\s+/g, '') === 'TN') {
+      setErrorMsg('Please enter Lorry Number after TN (e.g. TN 20 CH 2023).');
       return;
     }
 
@@ -171,7 +169,7 @@ export const StaffSimpleScreen = () => {
         isSecondPlusTrip: intendedTripNumber > 1,
         remarks: remarks.trim()
       });
-      setLorryNumber('');
+      setLorryNumber('TN ');
       setRemarks('');
     }
   };
@@ -242,16 +240,8 @@ export const StaffSimpleScreen = () => {
           </div>
         </div>
 
-        {/* Top Right: QR Code Access + Admin Login */}
+        {/* Top Right: Admin Login / Status */}
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsQRModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition active:scale-95 shadow-sm"
-            title="Scan QR Code to open on phones"
-          >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-            <span>QR Access</span>
-          </button>
 
           {isAdmin ? (
             <div className="flex items-center space-x-2">
@@ -371,11 +361,21 @@ export const StaffSimpleScreen = () => {
                   type="text"
                   required
                   autoFocus
-                  placeholder="e.g. TN 21 BV 1234"
+                  placeholder="TN 20 CH 2023"
                   value={lorryNumber}
+                  onFocus={(e) => {
+                    if (e.target.value === 'TN ') {
+                      e.target.setSelectionRange(3, 3);
+                    }
+                  }}
                   onChange={(e) => {
-                    const formatted = formatLorryNumber(e.target.value);
-                    setLorryNumber(formatted);
+                    const val = e.target.value;
+                    let raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (!raw.startsWith('TN')) {
+                      raw = 'TN' + raw;
+                    }
+                    const formatted = formatLorryNumber(raw);
+                    setLorryNumber(formatted === 'TN' ? 'TN ' : formatted);
                   }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-3 text-base sm:text-lg font-mono font-bold uppercase tracking-wider text-emerald-300 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -808,12 +808,6 @@ export const StaffSimpleScreen = () => {
           </div>
         </div>
       )}
-
-      {/* Quick Mobile / All Access QR Code Modal */}
-      <AllAccessQRModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-      />
 
     </div>
   );

@@ -4,7 +4,6 @@ import { useLorryData } from '../../context/LorryDataContext';
 import { format, isToday } from 'date-fns';
 import { formatLorryNumber, getTripLabel } from '../../utils/vehicleFormatter';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
-import { AllAccessQRModal } from '../common/AllAccessQRModal';
 import { 
   Users, 
   Trash2, 
@@ -39,7 +38,6 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'staff'
 
   // Modal States
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [editingMovement, setEditingMovement] = useState(null);
   const [deletingMovementId, setDeletingMovementId] = useState(null);
   const [isClearDailyModalOpen, setIsClearDailyModalOpen] = useState(false);
@@ -269,14 +267,6 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
           >
             <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
-          </button>
-          <button
-            onClick={() => setIsQRModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition shadow-sm"
-            title="Scan QR Code to open on phones"
-          >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">QR Access</span>
           </button>
           <button
             onClick={onOpenStaffView}
@@ -1039,12 +1029,6 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
           </div>
         </div>
       )}
-
-      {/* Quick Mobile / All Access QR Code Modal */}
-      <AllAccessQRModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-      />
 
     </div>
   );
