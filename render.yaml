@@ -6,9 +6,9 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGODB_URI
-        sync: false          # You paste your Atlas URI in Render dashboard
+        sync: false
       - key: DB_NAME
-        value: fleetgate
+        value: FleetGate
       - key: ADMIN_EMAIL
         value: admin@gmail.com
       - key: ADMIN_PASS
