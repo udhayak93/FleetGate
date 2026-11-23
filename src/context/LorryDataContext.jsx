@@ -3,6 +3,7 @@ import { supabase, getSupabaseConfig } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { isToday } from 'date-fns';
 import { formatLorryNumber } from '../utils/vehicleFormatter';
+import { apiFetch, apiUrl } from '../utils/api';
 
 const LorryDataContext = createContext(undefined);
 
@@ -42,7 +43,7 @@ export const LorryDataProvider = ({ children }) => {
 
     try {
       // 1. Fetch from shared backend API (synchronized across all devices)
-      const res = await fetch('/api/movements');
+      const res = await apiFetch('/api/movements');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.movements)) {
@@ -118,7 +119,7 @@ export const LorryDataProvider = ({ children }) => {
 
     // Connect to SSE stream for instant cross-device updates (< 100ms)
     try {
-      eventSource = new EventSource('/api/events');
+      eventSource = new EventSource(apiUrl('/api/events'));
       eventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -256,7 +257,7 @@ export const LorryDataProvider = ({ children }) => {
 
     try {
       // Send to shared cloud API
-      const res = await fetch('/api/movements/in', {
+      const res = await apiFetch('/api/movements/in', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -302,7 +303,7 @@ export const LorryDataProvider = ({ children }) => {
     setIsSyncing(true);
 
     try {
-      const res = await fetch('/api/movements/out', {
+      const res = await apiFetch('/api/movements/out', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -393,7 +394,7 @@ export const LorryDataProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch('/api/reset-all', { method: 'POST' });
+      const res = await apiFetch('/api/reset-all', { method: 'POST' });
       const result = await res.json();
       if (res.ok && result.success) {
         await refreshData();
@@ -411,7 +412,7 @@ export const LorryDataProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch('/api/reset-all', { method: 'POST' });
+      const res = await apiFetch('/api/reset-all', { method: 'POST' });
       const result = await res.json();
       if (res.ok && result.success) {
         await refreshData();

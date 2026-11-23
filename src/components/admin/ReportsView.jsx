@@ -28,6 +28,7 @@ import {
 } from '../../utils/reportCalculator';
 import { generateDailyReportPDF, generateWeeklyReportPDF } from '../../utils/pdfGenerator';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
+import { apiFetch } from '../../utils/api';
 
 export const ReportsView = ({ movements = [], onRefresh }) => {
   // ── States ──────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
   const fetchReportMetadata = async () => {
     try {
       // 1. Available Dates
-      const resDates = await fetch('/api/reports/dates');
+      const resDates = await apiFetch('/api/reports/dates');
       if (resDates.ok) {
         const data = await resDates.json();
         if (data.dates && data.dates.length > 0) {
@@ -63,7 +64,7 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
       }
 
       // 2. Saved Weekly Summaries
-      const resWeekly = await fetch('/api/reports/weekly');
+      const resWeekly = await apiFetch('/api/reports/weekly');
       if (resWeekly.ok) {
         const data = await resWeekly.json();
         if (data.summaries) {
@@ -81,7 +82,7 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
   const fetchStorageStatus = async () => {
     setIsLoadingStatus(true);
     try {
-      const res = await fetch('/api/reports/storage-status');
+      const res = await apiFetch('/api/reports/storage-status');
       if (res.ok) {
         const data = await res.json();
         setStorageStatus(data.storageStatus);
@@ -183,7 +184,7 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
     setIsMaintenanceRunning(true);
     setMaintenanceMessage(null);
     try {
-      const res = await fetch('/api/reports/maintenance', { method: 'POST' });
+      const res = await apiFetch('/api/reports/maintenance', { method: 'POST' });
       const data = await res.json();
       if (data.success && data.result) {
         const { archivedWeeksCount, deletedCount, protectedPendingCount } = data.result;

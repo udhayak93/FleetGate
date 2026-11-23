@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase, getSupabaseConfig } from '../lib/supabase';
 import { INITIAL_PROFILES } from '../data/mockData';
+import { apiFetch, apiUrl } from '../utils/api';
 
 const AuthContext = createContext(undefined);
 
@@ -36,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   // Fetch staff list from shared backend API
   const refreshStaffList = useCallback(async () => {
     try {
-      const res = await fetch('/api/staff');
+      const res = await apiFetch('/api/staff');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.staff)) {
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     let pollInterval = null;
 
     try {
-      eventSource = new EventSource('/api/events');
+      eventSource = new EventSource(apiUrl('/api/events'));
       eventSource.addEventListener('staff_update', () => {
         refreshStaffList();
       });
@@ -119,7 +120,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // 1. Try shared backend API first (works across all phones and devices)
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password: cleanPass })
@@ -211,7 +212,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch('/api/staff', {
+      const res = await apiFetch('/api/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullName, email, password, role })
@@ -233,7 +234,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`/api/staff/${userId}`, {
+      const res = await apiFetch(`/api/staff/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ full_name: fullName, email, password, role, is_active: isActive })
@@ -255,7 +256,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`/api/staff/${userId}`, {
+      const res = await apiFetch(`/api/staff/${userId}`, {
         method: 'DELETE'
       });
       const data = await res.json();
