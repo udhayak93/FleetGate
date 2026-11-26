@@ -1038,74 +1038,156 @@ export const StaffSimpleScreen = () => {
             </div>
           )}
 
-          {/* 5 KPI Summary Badges for Selected Date */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2.5">
-              <div className="text-[10px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">Total Vehicles</div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">{staffDailyReport.totalUniqueVehicles}</div>
-              <div className="text-[9px] text-slate-400">Unique tippers</div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2.5">
-              <div className="text-[10px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">Total Trips</div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{staffDailyReport.totalTrips}</div>
-              <div className="text-[9px] text-slate-400">Total movements</div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2.5">
-              <div className="text-[10px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">IN Entries</div>
-              <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{staffDailyReport.totalIn}</div>
-              <div className="text-[9px] text-slate-400">Checked IN</div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2.5">
-              <div className="text-[10px] font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400">OUT Entries</div>
-              <div className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 mt-0.5">{staffDailyReport.totalOut}</div>
-              <div className="text-[9px] text-slate-400">Completed exit</div>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-2.5">
-              <div className="text-[10px] font-bold tracking-wider uppercase text-rose-600 dark:text-rose-400">Pending OUT</div>
-              <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-0.5">{staffDailyReport.pendingOut}</div>
-              <div className="text-[9px] text-slate-400">Inside facility</div>
-            </div>
-          </div>
-
-          {/* Additional Summary Information Directly Below Total Trips Summary Area */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-            {/* 2+ Trips */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3 flex items-center justify-between transition-colors">
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">
-                    2+ Trips
+          {/* =========================================================================
+              REORGANIZED SUMMARY CARDS (7 Individual Cards in Balanced Grid)
+              Arrangement:
+              1. Total Trips
+              2. 2+ Trips
+              3. Inside Now
+              4. IN Entries
+              5. Total Vehicles
+              6. OUT Entries
+              7. Pending OUT
+              ========================================================================= */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            {/* LEFT PANEL: Trips Performance (Total Trips + 2+ Trips & Inside Now) */}
+            <div className="flex flex-col space-y-2.5">
+              {/* Card 1: Total Trips (Top Card) */}
+              <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-amber-300/80 dark:border-amber-700/60 rounded-xl p-3 sm:p-4 shadow-xs transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-amber-700 dark:text-amber-400">
+                      Total Trips
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                    Daily Movements
                   </span>
-                  <span className="text-xs">🔄</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">
+                  {staffDailyReport.totalTrips}
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Vehicles with 2+ trips on {staffDailyReport.displayDate}
+                  Total gate movements on {staffDailyReport.displayDate}
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400">
-                {staffDailyReport.multiTripVehiclesCount}
+
+              {/* Sub-Grid Directly Below Total Trips: Card 2 (2+ Trips) & Card 3 (Inside Now) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 flex-1">
+                {/* Card 2: 2+ Trips */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-purple-200/80 dark:border-purple-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-bold tracking-wider uppercase text-purple-700 dark:text-purple-400 flex items-center space-x-1">
+                      <span>2+ Trips</span>
+                      <span className="text-xs">🔄</span>
+                    </div>
+                  </div>
+                  <div className="my-1">
+                    <div className="text-xl sm:text-2xl font-black font-mono text-purple-600 dark:text-purple-400">
+                      {staffDailyReport.multiTripVehiclesCount}
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    Vehicles with 2+ trips
+                  </div>
+                </div>
+
+                {/* Card 3: Inside Now */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 flex items-center space-x-1">
+                      <span>Inside Now</span>
+                      <span className="text-xs">🟢</span>
+                    </div>
+                  </div>
+                  <div className="my-1">
+                    <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                      {staffDailyReport.insideNowCount}
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    Currently inside facility
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Inside Now */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3 flex items-center justify-between transition-colors">
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
-                    Inside Now
+            {/* RIGHT PANEL: Gate Entries & Fleet (IN Entries + Total Vehicles, OUT Entries & Pending OUT) */}
+            <div className="flex flex-col space-y-2.5">
+              {/* Card 4: IN Entries (Top Card) */}
+              <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent dark:from-blue-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-blue-300/80 dark:border-blue-700/60 rounded-xl p-3 sm:p-4 shadow-xs transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-blue-700 dark:text-blue-400">
+                      IN Entries
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                    Gate Influx
                   </span>
-                  <span className="text-xs">🟢</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">
+                  {staffDailyReport.totalIn}
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Vehicles inside facility on {staffDailyReport.displayDate}
+                  Total checked IN on {staffDailyReport.displayDate}
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                {staffDailyReport.insideNowCount}
+
+              {/* Sub-Grid Directly Below IN Entries: Card 5 (Total Vehicles), Card 6 (OUT Entries) & Card 7 (Pending OUT) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
+                {/* Card 5: Total Vehicles */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-400">
+                      Total Vehicles
+                    </div>
+                  </div>
+                  <div className="my-1">
+                    <div className="text-xl sm:text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">
+                      {staffDailyReport.totalUniqueVehicles}
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    Unique tippers
+                  </div>
+                </div>
+
+                {/* Card 6: OUT Entries */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-sky-200/80 dark:border-sky-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-bold tracking-wider uppercase text-sky-700 dark:text-sky-400">
+                      OUT Entries
+                    </div>
+                  </div>
+                  <div className="my-1">
+                    <div className="text-xl sm:text-2xl font-black font-mono text-sky-600 dark:text-sky-400">
+                      {staffDailyReport.totalOut}
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    Completed exit
+                  </div>
+                </div>
+
+                {/* Card 7: Pending OUT */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-rose-200/80 dark:border-rose-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-bold tracking-wider uppercase text-rose-700 dark:text-rose-400">
+                      Pending OUT
+                    </div>
+                  </div>
+                  <div className="my-1">
+                    <div className="text-xl sm:text-2xl font-black font-mono text-rose-600 dark:text-rose-400">
+                      {staffDailyReport.pendingOut}
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    Inside facility
+                  </div>
+                </div>
               </div>
             </div>
           </div>
