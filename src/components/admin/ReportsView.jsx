@@ -204,59 +204,18 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
     <div className="space-y-8 animate-fadeIn pb-12">
       
       {/* =========================================================================
-          SECTION 1: DAILY REPORTS (PDF DOWNLOAD & LIVE METRICS)
+          SECTION 1: DASHBOARD SUMMARY CARDS (All 7 Cards Together - Above Daily Report)
+          Arrangement:
+          1. Total Trips
+          2. 2+ Trips
+          3. Inside Now
+          4. IN Entries
+          5. Total Vehicles
+          6. OUT Entries
+          7. Pending OUT
           ========================================================================= */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-colors">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <FileText className="w-5 h-5" />
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-wide">
-                DAILY REPORTS
-              </h2>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Select any date to view trip statistics and download executive A4 landscape audit PDF reports.
-            </p>
-          </div>
-
-          {/* Date Selector & PDF Download CTA */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
-              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
-              />
-            </div>
-
-            <button
-              onClick={handleDownloadDailyPDF}
-              disabled={isExportingPDF}
-              className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download Daily Report (PDF)</span>
-            </button>
-          </div>
-        </div>
-
-        {/* =========================================================================
-            REORGANIZED SUMMARY CARDS (7 Individual Cards in Balanced Grid)
-            Arrangement:
-            1. Total Trips
-            2. 2+ Trips
-            3. Inside Now
-            4. IN Entries
-            5. Total Vehicles
-            6. OUT Entries
-            7. Pending OUT
-            ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* LEFT PANEL: Trips Performance (Total Trips + 2+ Trips & Inside Now) */}
           <div className="flex flex-col space-y-3">
             {/* Card 1: Total Trips (Top Card) */}
@@ -396,6 +355,49 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 2: DAILY REPORTS (Positioned Below All Seven Summary Cards)
+          ========================================================================= */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-colors">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <FileText className="w-5 h-5" />
+              </span>
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-wide">
+                DAILY REPORTS
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Select any date to view trip statistics and download executive A4 landscape audit PDF reports.
+            </p>
+          </div>
+
+          {/* Date Selector & PDF Download CTA */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+
+            <button
+              onClick={handleDownloadDailyPDF}
+              disabled={isExportingPDF}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Daily Report (PDF)</span>
+            </button>
           </div>
         </div>
       </section>
