@@ -580,69 +580,124 @@ export const StaffSimpleScreen = () => {
         </div>
 
         {/* =========================================================================
-            1. DASHBOARD SUMMARY CARDS (All 7 Cards Together - Above Daily Report)
+            1. DASHBOARD SUMMARY CARDS (All 7 Cards Together - Styled to Match Screenshot)
             Arrangement:
-            1. Total Trips
-            2. 2+ Trips
-            3. Inside Now
-            4. IN Entries
-            5. Total Vehicles
-            6. OUT Entries
-            7. Pending OUT
+            Header: DATES: [ 26 Nov 2026 ]
+            Left Column:
+              1. Total Trips (Top)
+              Directly below: 2. 2+ Trips | 3. Inside Now (2 equal cards)
+            Right Column:
+              4. IN Entries (Top)
+              Directly below: 5. Total Vehicles | 6. OUT Entries (2 equal cards)
+            Bottom:
+              7. Pending OUT (Full-width spanning both columns)
             ========================================================================= */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors space-y-3.5">
+          {/* Header: DATES pill matching screenshot */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-black tracking-wider uppercase text-slate-500 dark:text-slate-400">
+                DATES:
+              </span>
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1 shadow-inner">
+                <Calendar className="w-3.5 h-3.5 text-blue-500 mr-1.5 shrink-0" />
+                <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                  {formatISTDisplayDate(dailyReportDate === 'ALL' ? todayIST : dailyReportDate)}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Date Switcher: Prev, Today, Yesterday, Next */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto">
+              <button
+                type="button"
+                onClick={handlePrevReportDay}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Previous Day"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDailyReportDate(todayIST);
+                  setSelectedRecordsDate(todayIST);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer ${
+                  dailyReportDate === todayIST
+                    ? 'bg-blue-600 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/80'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDailyReportDate(yesterdayIST);
+                  setSelectedRecordsDate(yesterdayIST);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer ${
+                  dailyReportDate === yesterdayIST
+                    ? 'bg-blue-600 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/80'
+                }`}
+              >
+                Yesterday
+              </button>
+              <button
+                type="button"
+                onClick={handleNextReportDay}
+                disabled={dailyReportDate >= todayIST}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next Day"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Grid: 2 Columns for Symmetrical Balance */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            {/* LEFT PANEL: Trips Performance (Total Trips + 2+ Trips & Inside Now) */}
-            <div className="flex flex-col space-y-2.5">
-              {/* Card 1: Total Trips (Top Card) */}
+            
+            {/* LEFT COLUMN: Trips Metric Section */}
+            <div className="flex flex-col space-y-3">
+              {/* Card 1: Total Trips */}
               <button
                 type="button"
                 onClick={() => setActiveFilter('ALL')}
-                className={`w-full text-left bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-amber-300/80 dark:border-amber-700/60 rounded-xl p-3 sm:p-4 shadow-xs transition-colors hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer ${
+                className={`w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer ${
                   activeFilter === 'ALL' ? 'ring-2 ring-amber-400/40' : ''
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-amber-700 dark:text-amber-400">
-                      Total Trips
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                    Daily Movements
-                  </span>
+                <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-amber-500 dark:text-amber-400">
+                  TOTAL TRIPS
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">
+                <div className="text-3xl sm:text-4xl font-black font-mono text-amber-500 dark:text-amber-400 my-1">
                   {staffDailyReport.totalTrips}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Total gate movements on {staffDailyReport.displayDate}
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Total movements
                 </div>
               </button>
 
-              {/* Sub-Grid Directly Below Total Trips: Card 2 (2+ Trips) & Card 3 (Inside Now) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 flex-1">
+              {/* Directly Below Total Trips: Card 2 (2+ Trips) & Card 3 (Inside Now) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
                 {/* Card 2: 2+ Trips */}
                 <button
                   type="button"
                   onClick={() => setActiveFilter(activeFilter === 'MULTI_TRIP' ? 'ALL' : 'MULTI_TRIP')}
-                  className={`w-full text-left bg-slate-50 dark:bg-slate-800/50 border border-purple-200/80 dark:border-purple-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors hover:border-purple-400 dark:hover:border-purple-500 cursor-pointer ${
+                  className={`w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition hover:border-purple-400 dark:hover:border-purple-500 cursor-pointer ${
                     activeFilter === 'MULTI_TRIP' ? 'ring-2 ring-purple-500 bg-purple-50/80 dark:bg-purple-950/40' : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-bold tracking-wider uppercase text-purple-700 dark:text-purple-400 flex items-center space-x-1">
-                      <span>2+ Trips</span>
-                      <span className="text-xs">🔄</span>
-                    </div>
+                  <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-purple-600 dark:text-purple-400">
+                    2+ TRIPS
                   </div>
-                  <div className="my-1">
-                    <div className="text-xl sm:text-2xl font-black font-mono text-purple-600 dark:text-purple-400">
-                      {staffDailyReport.multiTripVehiclesCount}
-                    </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-purple-600 dark:text-purple-400 my-1">
+                    {staffDailyReport.multiTripVehiclesCount}
                   </div>
-                  <div className="text-[9px] text-slate-400">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     Vehicles with 2+ trips
                   </div>
                 </button>
@@ -651,267 +706,88 @@ export const StaffSimpleScreen = () => {
                 <button
                   type="button"
                   onClick={() => setActiveFilter(activeFilter === 'INSIDE' ? 'ALL' : 'INSIDE')}
-                  className={`w-full text-left bg-slate-50 dark:bg-slate-800/50 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors hover:border-emerald-400 dark:hover:border-emerald-500 cursor-pointer ${
+                  className={`w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition hover:border-emerald-400 dark:hover:border-emerald-500 cursor-pointer ${
                     activeFilter === 'INSIDE' ? 'ring-2 ring-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40' : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 flex items-center space-x-1">
-                      <span>Inside Now</span>
-                      <span className="text-xs">🟢</span>
-                    </div>
+                  <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                    INSIDE NOW
                   </div>
-                  <div className="my-1">
-                    <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                      {staffDailyReport.insideNowCount}
-                    </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 my-1">
+                    {staffDailyReport.insideNowCount}
                   </div>
-                  <div className="text-[9px] text-slate-400">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     Currently inside facility
                   </div>
                 </button>
               </div>
             </div>
 
-            {/* RIGHT PANEL: Gate Entries & Fleet (IN Entries + Total Vehicles, OUT Entries & Pending OUT) */}
-            <div className="flex flex-col space-y-2.5">
-              {/* Card 4: IN Entries (Top Card) */}
-              <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent dark:from-blue-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-blue-300/80 dark:border-blue-700/60 rounded-xl p-3 sm:p-4 shadow-xs transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                    <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-blue-700 dark:text-blue-400">
-                      IN Entries
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                    Gate Influx
-                  </span>
+            {/* RIGHT COLUMN: Gate Influx & Fleet Breakdown */}
+            <div className="flex flex-col space-y-3">
+              {/* Card 4: IN Entries */}
+              <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition">
+                <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                  IN ENTRIES
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-blue-600 dark:text-blue-400 mt-1">
+                <div className="text-3xl sm:text-4xl font-black font-mono text-emerald-600 dark:text-emerald-400 my-1">
                   {staffDailyReport.totalIn}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Total checked IN on {staffDailyReport.displayDate}
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Checked IN
                 </div>
               </div>
 
-              {/* Sub-Grid Directly Below IN Entries: Card 5 (Total Vehicles), Card 6 (OUT Entries) & Card 7 (Pending OUT) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
+              {/* Directly Below IN Entries: Card 5 (Total Vehicles) & Card 6 (OUT Entries) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
                 {/* Card 5: Total Vehicles */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-400">
-                      Total Vehicles
-                    </div>
+                <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                  <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-slate-700 dark:text-slate-200">
+                    TOTAL VEHICLES
                   </div>
-                  <div className="my-1">
-                    <div className="text-xl sm:text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">
-                      {staffDailyReport.totalUniqueVehicles}
-                    </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white my-1">
+                    {staffDailyReport.totalUniqueVehicles}
                   </div>
-                  <div className="text-[9px] text-slate-400">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     Unique tippers
                   </div>
                 </div>
 
                 {/* Card 6: OUT Entries */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-sky-200/80 dark:border-sky-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-bold tracking-wider uppercase text-sky-700 dark:text-sky-400">
-                      OUT Entries
-                    </div>
+                <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                  <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400">
+                    OUT ENTRIES
                   </div>
-                  <div className="my-1">
-                    <div className="text-xl sm:text-2xl font-black font-mono text-sky-600 dark:text-sky-400">
-                      {staffDailyReport.totalOut}
-                    </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-sky-600 dark:text-sky-400 my-1">
+                    {staffDailyReport.totalOut}
                   </div>
-                  <div className="text-[9px] text-slate-400">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     Completed exit
                   </div>
                 </div>
-
-                {/* Card 7: Pending OUT */}
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter(activeFilter === 'INSIDE' ? 'ALL' : 'INSIDE')}
-                  className={`w-full text-left bg-slate-50 dark:bg-slate-800/50 border border-rose-200/80 dark:border-rose-800/60 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-colors hover:border-rose-400 dark:hover:border-rose-500 cursor-pointer ${
-                    activeFilter === 'INSIDE' ? 'ring-2 ring-rose-500 bg-rose-50/80 dark:bg-rose-950/40' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-bold tracking-wider uppercase text-rose-700 dark:text-rose-400">
-                      Pending OUT
-                    </div>
-                  </div>
-                  <div className="my-1">
-                    <div className="text-xl sm:text-2xl font-black font-mono text-rose-600 dark:text-rose-400">
-                      {staffDailyReport.pendingOut}
-                    </div>
-                  </div>
-                  <div className="text-[9px] text-slate-400">
-                    Inside facility
-                  </div>
-                </button>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* =========================================================================
-            2. DAILY REPORT SECTION (Positioned Below All Seven Summary Cards)
-            ========================================================================= */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors space-y-4">
-          
-          {/* Section Header: Title, Date Selector, Prev/Next, and PDF Download Button */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <FileText className="w-5 h-5" />
-                </span>
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-wide">
-                  DAILY REPORTS & AUDIT
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Trip distribution statistics and official A4 Daily Report PDF download.
-              </p>
-            </div>
-
-            {/* Controls: Date Picker & PDF Download CTA */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Prev Day */}
-              <button
-                type="button"
-                onClick={handlePrevReportDay}
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                title="Previous Day"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {/* Date Input */}
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
-                <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2 shrink-0" />
-                <input
-                  type="date"
-                  value={dailyReportDate === 'ALL' ? todayIST : dailyReportDate}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setDailyReportDate(val);
-                    setSelectedRecordsDate(val);
-                  }}
-                  className="bg-transparent text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
-                />
-              </div>
-
-              {/* Next Day */}
-              <button
-                type="button"
-                onClick={handleNextReportDay}
-                disabled={dailyReportDate >= todayIST}
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Next Day"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Download PDF Button */}
-              <button
-                type="button"
-                onClick={handleDownloadStaffDailyPDF}
-                disabled={isExportingDailyPDF}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>{isExportingDailyPDF ? 'Generating...' : 'Download Daily Report (PDF)'}</span>
-              </button>
-            </div>
           </div>
 
-          {/* Quick Available Date Pills */}
-          {availableDates.length > 0 && (
-            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Dates:</span>
-              {availableDates.slice(0, 7).map(dStr => (
-                <button
-                  key={dStr}
-                  type="button"
-                  onClick={() => {
-                    setDailyReportDate(dStr);
-                    setSelectedRecordsDate(dStr);
-                  }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition shrink-0 cursor-pointer ${
-                    dailyReportDate === dStr
-                      ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/80'
-                  }`}
-                >
-                  {formatISTDisplayDate(dStr)}
-                </button>
-              ))}
+          {/* Card 7: PENDING OUT (Full-width spanning both columns, matching user's screenshot) */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter(activeFilter === 'INSIDE' ? 'ALL' : 'INSIDE')}
+            className={`w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition hover:border-rose-400 dark:hover:border-rose-500 cursor-pointer ${
+              activeFilter === 'INSIDE' ? 'ring-2 ring-rose-500 bg-rose-50/80 dark:bg-rose-950/40' : ''
+            }`}
+          >
+            <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-rose-500 dark:text-rose-400">
+              PENDING OUT
             </div>
-          )}
-
-          {/* Trip-Wise Distinct Category Cards (1st Trip, 2nd Trip, 3rd Trip, 4th Trip, 5+ Trips) */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Trip-Wise Vehicle Count ({staffDailyReport.displayDate})</span>
-              </h3>
-              <span className="text-[10px] text-slate-400 italic">Each vehicle counted once in final category</span>
+            <div className="text-3xl sm:text-4xl font-black font-mono text-rose-500 dark:text-rose-400 my-1">
+              {staffDailyReport.pendingOut}
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
-              {/* Trip 1 - Blue */}
-              <div className="bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70 rounded-xl p-2.5 text-center transition-colors">
-                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1st Trip</div>
-                <div className="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 mt-0.5">
-                  {staffDailyReport.tripCategories.trips1}
-                </div>
-                <div className="text-[9px] text-blue-500/80 dark:text-blue-400/70">Vehicles (1 trip only)</div>
-              </div>
-
-              {/* Trip 2 - Green */}
-              <div className="bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 rounded-xl p-2.5 text-center transition-colors">
-                <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">2nd Trip</div>
-                <div className="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
-                  {staffDailyReport.tripCategories.trips2}
-                </div>
-                <div className="text-[9px] text-emerald-500/80 dark:text-emerald-400/70">Vehicles (2 trips only)</div>
-              </div>
-
-              {/* Trip 3 - Purple */}
-              <div className="bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/70 rounded-xl p-2.5 text-center transition-colors">
-                <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">3rd Trip</div>
-                <div className="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 mt-0.5">
-                  {staffDailyReport.tripCategories.trips3}
-                </div>
-                <div className="text-[9px] text-purple-500/80 dark:text-purple-400/70">Vehicles (3 trips only)</div>
-              </div>
-
-              {/* Trip 4 - Orange */}
-              <div className="bg-orange-50/50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/70 rounded-xl p-2.5 text-center transition-colors">
-                <div className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">4th Trip</div>
-                <div className="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 mt-0.5">
-                  {staffDailyReport.tripCategories.trips4}
-                </div>
-                <div className="text-[9px] text-orange-500/80 dark:text-orange-400/70">Vehicles (4 trips only)</div>
-              </div>
-
-              {/* Trip 5+ - Teal */}
-              <div className="col-span-2 sm:col-span-1 bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 rounded-xl p-2.5 text-center transition-colors">
-                <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">5+ Trips</div>
-                <div className="text-lg sm:text-xl font-black text-teal-700 dark:text-teal-300 mt-0.5">
-                  {staffDailyReport.tripCategories.trips5Plus}
-                </div>
-                <div className="text-[9px] text-teal-500/80 dark:text-teal-400/70">5 or more trips</div>
-              </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Inside facility
             </div>
-          </div>
+          </button>
         </div>
 
         {/* 2+ Trips Vehicle List Chips (if any exist) */}
@@ -1215,6 +1091,161 @@ export const StaffSimpleScreen = () => {
             </div>
           )}
 
+        </div>
+
+        {/* =========================================================================
+            DAILY REPORT & AUDIT SECTION (Staff Screen - At Bottom)
+            ========================================================================= */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors space-y-4">
+          
+          {/* Section Header: Title, Date Selector, Prev/Next, and PDF Download Button */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <FileText className="w-5 h-5" />
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-wide">
+                  DAILY REPORTS & AUDIT
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Trip distribution statistics and official A4 Daily Report PDF download.
+              </p>
+            </div>
+
+            {/* Controls: Date Picker & PDF Download CTA */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Prev Day */}
+              <button
+                type="button"
+                onClick={handlePrevReportDay}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Previous Day"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Date Input */}
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2 shrink-0" />
+                <input
+                  type="date"
+                  value={dailyReportDate === 'ALL' ? todayIST : dailyReportDate}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDailyReportDate(val);
+                    setSelectedRecordsDate(val);
+                  }}
+                  className="bg-transparent text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
+                />
+              </div>
+
+              {/* Next Day */}
+              <button
+                type="button"
+                onClick={handleNextReportDay}
+                disabled={dailyReportDate >= todayIST}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next Day"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {/* Download PDF Button */}
+              <button
+                type="button"
+                onClick={handleDownloadStaffDailyPDF}
+                disabled={isExportingDailyPDF}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{isExportingDailyPDF ? 'Generating...' : 'Download Daily Report (PDF)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Available Date Pills */}
+          {availableDates.length > 0 && (
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Dates:</span>
+              {availableDates.slice(0, 7).map(dStr => (
+                <button
+                  key={dStr}
+                  type="button"
+                  onClick={() => {
+                    setDailyReportDate(dStr);
+                    setSelectedRecordsDate(dStr);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition shrink-0 cursor-pointer ${
+                    dailyReportDate === dStr
+                      ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/80'
+                  }`}
+                >
+                  {formatISTDisplayDate(dStr)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Trip-Wise Distinct Category Cards (1st Trip, 2nd Trip, 3rd Trip, 4th Trip, 5+ Trips) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Trip-Wise Vehicle Count ({staffDailyReport.displayDate})</span>
+              </h3>
+              <span className="text-[10px] text-slate-400 italic">Each vehicle counted once in final category</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
+              {/* Trip 1 - Blue */}
+              <div className="bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70 rounded-xl p-2.5 text-center transition-colors">
+                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1st Trip</div>
+                <div className="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 mt-0.5">
+                  {staffDailyReport.tripCategories.trips1}
+                </div>
+                <div className="text-[9px] text-blue-500/80 dark:text-blue-400/70">Vehicles (1 trip only)</div>
+              </div>
+
+              {/* Trip 2 - Green */}
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 rounded-xl p-2.5 text-center transition-colors">
+                <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">2nd Trip</div>
+                <div className="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                  {staffDailyReport.tripCategories.trips2}
+                </div>
+                <div className="text-[9px] text-emerald-500/80 dark:text-emerald-400/70">Vehicles (2 trips only)</div>
+              </div>
+
+              {/* Trip 3 - Purple */}
+              <div className="bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/70 rounded-xl p-2.5 text-center transition-colors">
+                <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">3rd Trip</div>
+                <div className="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 mt-0.5">
+                  {staffDailyReport.tripCategories.trips3}
+                </div>
+                <div className="text-[9px] text-purple-500/80 dark:text-purple-400/70">Vehicles (3 trips only)</div>
+              </div>
+
+              {/* Trip 4 - Orange */}
+              <div className="bg-orange-50/50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/70 rounded-xl p-2.5 text-center transition-colors">
+                <div className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">4th Trip</div>
+                <div className="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 mt-0.5">
+                  {staffDailyReport.tripCategories.trips4}
+                </div>
+                <div className="text-[9px] text-orange-500/80 dark:text-orange-400/70">Vehicles (4 trips only)</div>
+              </div>
+
+              {/* Trip 5+ - Teal */}
+              <div className="col-span-2 sm:col-span-1 bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 rounded-xl p-2.5 text-center transition-colors">
+                <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">5+ Trips</div>
+                <div className="text-lg sm:text-xl font-black text-teal-700 dark:text-teal-300 mt-0.5">
+                  {staffDailyReport.tripCategories.trips5Plus}
+                </div>
+                <div className="text-[9px] text-teal-500/80 dark:text-teal-400/70">5 or more trips</div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </main>

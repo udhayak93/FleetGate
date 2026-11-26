@@ -204,157 +204,171 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
     <div className="space-y-8 animate-fadeIn pb-12">
       
       {/* =========================================================================
-          SECTION 1: DASHBOARD SUMMARY CARDS (All 7 Cards Together - Above Daily Report)
+          SECTION 1: DASHBOARD SUMMARY CARDS (All 7 Cards Together - Styled to Match Screenshot)
           Arrangement:
-          1. Total Trips
-          2. 2+ Trips
-          3. Inside Now
-          4. IN Entries
-          5. Total Vehicles
-          6. OUT Entries
-          7. Pending OUT
+          Header: DATES: [ 26 Nov 2026 ]
+          Left Column:
+            1. Total Trips (Top)
+            Directly below: 2. 2+ Trips | 3. Inside Now (2 equal cards)
+          Right Column:
+            4. IN Entries (Top)
+            Directly below: 5. Total Vehicles | 6. OUT Entries (2 equal cards)
+          Bottom:
+            7. Pending OUT (Full-width spanning both columns)
           ========================================================================= */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-colors">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* LEFT PANEL: Trips Performance (Total Trips + 2+ Trips & Inside Now) */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors space-y-3.5">
+        {/* Header: DATES pill matching screenshot */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-black tracking-wider uppercase text-slate-500 dark:text-slate-400">
+              DATES:
+            </span>
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1 shadow-inner">
+              <Calendar className="w-3.5 h-3.5 text-blue-500 mr-1.5 shrink-0" />
+              <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                {formatISTDisplayDate(selectedDate)}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Date Switcher: Prev, Today, Yesterday, Next */}
+          <div className="flex items-center space-x-1.5 overflow-x-auto">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Previous Day"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(todayIST)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer ${
+                selectedDate === todayIST
+                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700/80'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={handleNextDay}
+              disabled={selectedDate >= todayIST}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Next Day"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Cards Grid: 2 Columns for Symmetrical Balance */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          
+          {/* LEFT COLUMN: Trips Metric Section */}
           <div className="flex flex-col space-y-3">
-            {/* Card 1: Total Trips (Top Card) */}
-            <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-amber-300/80 dark:border-amber-700/60 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                  <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-amber-700 dark:text-amber-400">
-                    Total Trips
-                  </div>
-                </div>
-                <span className="text-xs font-mono font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                  Daily Movements
-                </span>
+            {/* Card 1: Total Trips */}
+            <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition">
+              <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-amber-500 dark:text-amber-400">
+                TOTAL TRIPS
               </div>
-              <div className="text-3xl sm:text-4xl font-black font-mono text-amber-600 dark:text-amber-400 mt-2">
+              <div className="text-3xl sm:text-4xl font-black font-mono text-amber-500 dark:text-amber-400 my-1">
                 {dailyReport.totalTrips}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Total gate movements recorded on {dailyReport.displayDate}
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Total movements
               </div>
             </div>
 
-            {/* Sub-Grid Directly Below Total Trips: Card 2 (2+ Trips) & Card 3 (Inside Now) */}
+            {/* Directly Below Total Trips: Card 2 (2+ Trips) & Card 3 (Inside Now) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
               {/* Card 2: 2+ Trips */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-purple-200/80 dark:border-purple-800/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-bold tracking-wider uppercase text-purple-700 dark:text-purple-400 flex items-center space-x-1.5">
-                    <span>2+ Trips</span>
-                    <span className="text-xs">🔄</span>
-                  </div>
+              <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-purple-600 dark:text-purple-400">
+                  2+ TRIPS
                 </div>
-                <div className="my-1.5">
-                  <div className="text-2xl sm:text-3xl font-black font-mono text-purple-600 dark:text-purple-400">
-                    {dailyReport.multiTripVehiclesCount}
-                  </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-purple-600 dark:text-purple-400 my-1">
+                  {dailyReport.multiTripVehiclesCount}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                  Vehicles with 2+ trips today
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Vehicles with 2+ trips
                 </div>
               </div>
 
               {/* Card 3: Inside Now */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 flex items-center space-x-1.5">
-                    <span>Inside Now</span>
-                    <span className="text-xs">🟢</span>
-                  </div>
+              <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                  INSIDE NOW
                 </div>
-                <div className="my-1.5">
-                  <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                    {dailyReport.insideNowCount}
-                  </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 my-1">
+                  {dailyReport.insideNowCount}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Currently inside facility
                 </div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT PANEL: Gate Entries & Fleet (IN Entries + Total Vehicles, OUT Entries & Pending OUT) */}
+          {/* RIGHT COLUMN: Gate Influx & Fleet Breakdown */}
           <div className="flex flex-col space-y-3">
-            {/* Card 4: IN Entries (Top Card) */}
-            <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent dark:from-blue-950/30 dark:via-slate-800/60 dark:to-slate-800/40 border border-blue-300/80 dark:border-blue-700/60 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
-                  <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-blue-700 dark:text-blue-400">
-                    IN Entries
-                  </div>
-                </div>
-                <span className="text-xs font-mono font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                  Gate Influx
-                </span>
+            {/* Card 4: IN Entries */}
+            <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition">
+              <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                IN ENTRIES
               </div>
-              <div className="text-3xl sm:text-4xl font-black font-mono text-blue-600 dark:text-blue-400 mt-2">
+              <div className="text-3xl sm:text-4xl font-black font-mono text-emerald-600 dark:text-emerald-400 my-1">
                 {dailyReport.totalIn}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Total vehicles checked IN on {dailyReport.displayDate}
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Checked IN
               </div>
             </div>
 
-            {/* Sub-Grid Directly Below IN Entries: Card 5 (Total Vehicles), Card 6 (OUT Entries) & Card 7 (Pending OUT) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+            {/* Directly Below IN Entries: Card 5 (Total Vehicles) & Card 6 (OUT Entries) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
               {/* Card 5: Total Vehicles */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-400">
-                    Total Vehicles
-                  </div>
+              <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-slate-700 dark:text-slate-200">
+                  TOTAL VEHICLES
                 </div>
-                <div className="my-1.5">
-                  <div className="text-2xl sm:text-3xl font-black font-mono text-indigo-600 dark:text-indigo-400">
-                    {dailyReport.totalUniqueVehicles}
-                  </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white my-1">
+                  {dailyReport.totalUniqueVehicles}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Unique tippers
                 </div>
               </div>
 
               {/* Card 6: OUT Entries */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-sky-200/80 dark:border-sky-800/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-bold tracking-wider uppercase text-sky-700 dark:text-sky-400">
-                    OUT Entries
-                  </div>
+              <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition">
+                <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400">
+                  OUT ENTRIES
                 </div>
-                <div className="my-1.5">
-                  <div className="text-2xl sm:text-3xl font-black font-mono text-sky-600 dark:text-sky-400">
-                    {dailyReport.totalOut}
-                  </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-sky-600 dark:text-sky-400 my-1">
+                  {dailyReport.totalOut}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                  Completed exit cycles
-                </div>
-              </div>
-
-              {/* Card 7: Pending OUT */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-rose-200/80 dark:border-rose-800/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-bold tracking-wider uppercase text-rose-700 dark:text-rose-400">
-                    Pending OUT
-                  </div>
-                </div>
-                <div className="my-1.5">
-                  <div className="text-2xl sm:text-3xl font-black font-mono text-rose-600 dark:text-rose-400">
-                    {dailyReport.pendingOut}
-                  </div>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                  Inside facility
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Completed exit
                 </div>
               </div>
             </div>
+          </div>
+
+        </div>
+
+        {/* Card 7: PENDING OUT (Full-width spanning both columns, matching user's screenshot) */}
+        <div className="w-full text-left bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition">
+          <div className="text-xs sm:text-sm font-bold tracking-wider uppercase text-rose-500 dark:text-rose-400">
+            PENDING OUT
+          </div>
+          <div className="text-3xl sm:text-4xl font-black font-mono text-rose-500 dark:text-rose-400 my-1">
+            {dailyReport.pendingOut}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            Inside facility
           </div>
         </div>
       </section>
