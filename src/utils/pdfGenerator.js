@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatISTDateTime, formatISTDisplayDate } from './reportCalculator';
+import { formatISTDateTime, formatISTDisplayDate, formatISTTime, getISTDateString } from './reportCalculator';
 
 /**
  * Generate and download a professional A4 Daily Report PDF
@@ -178,8 +178,22 @@ export function generateDailyReportPDF(dailyReport) {
     }
   });
 
-  // ── Section 3: Complete Individual Lorry Movement Records for Selected Date ──
+  // ── Section 3: Clean & Simplified Lorry Movement Records for Selected Date ──
   const ledgerY = doc.lastAutoTable.finalY + 4;
+
+  const formatCleanTime = (isoStr, baseDateStr) => {
+    if (!isoStr) return '-';
+    try {
+      const itemDate = getISTDateString(isoStr);
+      const timePart = formatISTTime(isoStr);
+      if (baseDateStr && itemDate !== baseDateStr) {
+        return `${formatISTDisplayDate(itemDate)}, ${timePart}`;
+      }
+      return timePart;
+    } catch {
+      return String(isoStr);
+    }
+  };
 
   // Use individualRecords if available, else derive from rawMovements
   const recordsToExport = (individualRecords && individualRecords.length > 0)
@@ -187,66 +201,64 @@ export function generateDailyReportPDF(dailyReport) {
     : (rawMovements || []).map((m, idx) => ({
         index: idx + 1,
         plate_number: m.plate_number || m.vehicle_number || '-',
-        vehicle_type: m.wheel_type || m.vehicle_type || '12 Wheel',
+        trip_number: m.trip_number || m.visit_number || 1,
         trip_label: `Trip ${m.trip_number || m.visit_number || 1}`,
-        in_time_formatted: formatISTDateTime(m.entry_time || m.in_time || m.created_at),
-        out_time_formatted: (m.exit_time || m.out_time) ? formatISTDateTime(m.exit_time || m.out_time) : 'Pending OUT',
-        status: (m.exit_time || m.out_time) ? 'Completed' : 'Inside',
+        entry_time: m.entry_time || m.in_time || m.created_at,
+        exit_time: m.exit_time || m.out_time,
+        status: (m.exit_time || m.out_time) && !m.is_active_inside ? 'Completed' : 'Inside',
         remarks: m.remarks || m.entry_notes || m.location || m.gate || m.exit_remarks || '-'
       }));
 
   const ledgerRows = recordsToExport.map((r, i) => [
     `${i + 1}`,
     r.plate_number,
-    r.vehicle_type || '12 Wheel',
     r.trip_label || `Trip ${r.trip_number || 1}`,
-    r.in_time_formatted,
-    r.out_time_formatted,
+    formatCleanTime(r.entry_time, date),
+    r.exit_time ? formatCleanTime(r.exit_time, date) : 'Pending OUT',
     r.status,
     r.remarks || '-'
   ]);
 
   autoTable(doc, {
     startY: ledgerY,
-    head: [['#', 'Lorry Number', 'Vehicle / Wheel Type', 'Trip #', 'Entry Date & IN Time', 'Exit Date & OUT Time', 'Status', 'Point / Remarks']],
-    body: ledgerRows.length > 0 ? ledgerRows : [['-', 'No Records Found For Selected Date', '-', '-', '-', '-', '-', '-']],
-    foot: [['', `TOTAL VEHICLES: ${totalUniqueVehicles}`, '', '', '', '', '', `TOTAL VISITS: ${totalTrips}`]],
+    head: [['#', 'Lorry Number', 'Trip Count', 'IN Time', 'OUT Time', 'Status', 'Remarks']],
+    body: ledgerRows.length > 0 ? ledgerRows : [['-', 'No Records Found For Selected Date', '-', '-', '-', '-', '-']],
+    foot: [['', `TOTAL VEHICLES: ${totalUniqueVehicles}`, '', '', '', '', `TOTAL MOVEMENTS: ${totalTrips}`]],
     theme: 'striped',
     margin: { left: 14, right: 14, bottom: 15 },
     tableWidth: pageWidth - 28,
     headStyles: {
       fillColor: [16, 185, 129], // emerald-600
       textColor: [255, 255, 255],
-      fontSize: 7.5,
+      fontSize: 8,
       fontStyle: 'bold',
       halign: 'left',
       cellPadding: 2
     },
     bodyStyles: {
-      fontSize: 7,
+      fontSize: 7.5,
       textColor: [15, 23, 42],
-      cellPadding: 1.6
+      cellPadding: 1.8
     },
     footStyles: {
       fillColor: [241, 245, 249],
       textColor: [15, 23, 42],
       fontStyle: 'bold',
-      fontSize: 7.5,
+      fontSize: 8,
       cellPadding: 2
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 40, fontStyle: 'bold', textColor: [4, 120, 87] }, // emerald bold plate
-      2: { cellWidth: 32, fontStyle: 'normal' },
-      3: { cellWidth: 20, fontStyle: 'bold', halign: 'center' },
-      4: { cellWidth: 42 },
-      5: { cellWidth: 42 },
-      6: { cellWidth: 25, fontStyle: 'bold', halign: 'center' },
-      7: { cellWidth: 58 }
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 50, fontStyle: 'bold', textColor: [4, 120, 87] }, // emerald bold plate
+      2: { cellWidth: 32, fontStyle: 'bold', halign: 'center' },
+      3: { cellWidth: 45, halign: 'center', fontStyle: 'bold' },
+      4: { cellWidth: 45, halign: 'center' },
+      5: { cellWidth: 28, fontStyle: 'bold', halign: 'center' },
+      6: { cellWidth: 57 }
     },
     didParseCell: (data) => {
-      // Color code Trip numbers in column 3
-      if (data.section === 'body' && data.column.index === 3) {
+      // Color code Trip numbers in column 2 (Trip Count)
+      if (data.section === 'body' && data.column.index === 2) {
         const text = String(data.cell.raw || '');
         if (text.includes('1')) data.cell.styles.textColor = [37, 99, 235]; // Blue
         else if (text.includes('2')) data.cell.styles.textColor = [16, 185, 129]; // Green
@@ -254,8 +266,8 @@ export function generateDailyReportPDF(dailyReport) {
         else if (text.includes('4')) data.cell.styles.textColor = [249, 115, 22]; // Orange
         else data.cell.styles.textColor = [20, 184, 166]; // Teal
       }
-      // Status column
-      if (data.section === 'body' && data.column.index === 6) {
+      // Status column (column 5)
+      if (data.section === 'body' && data.column.index === 5) {
         const text = String(data.cell.raw || '');
         if (text === 'Inside') {
           data.cell.styles.textColor = [225, 29, 72]; // Rose

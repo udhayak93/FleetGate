@@ -46,6 +46,14 @@ export const StaffSimpleScreen = () => {
 
   // Daily Report & PDF State (Staff Accessible)
   const todayIST = useMemo(() => getISTDateString(new Date()), []);
+  const yesterdayIST = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return getISTDateString(d);
+  }, []);
+
+  // Lorry Records Date Filter State (Defaults to today, but staff can view yesterday, any past date, or all records)
+  const [selectedRecordsDate, setSelectedRecordsDate] = useState(todayIST);
   const [dailyReportDate, setDailyReportDate] = useState(todayIST);
   const [isExportingDailyPDF, setIsExportingDailyPDF] = useState(false);
 
@@ -69,6 +77,20 @@ export const StaffSimpleScreen = () => {
     const cur = new Date(dailyReportDate + 'T00:00:00+05:30');
     cur.setDate(cur.getDate() + 1);
     setDailyReportDate(getISTDateString(cur));
+  };
+
+  const handlePrevRecordsDay = () => {
+    const base = selectedRecordsDate === 'ALL' ? todayIST : selectedRecordsDate;
+    const cur = new Date(base + 'T00:00:00+05:30');
+    cur.setDate(cur.getDate() - 1);
+    setSelectedRecordsDate(getISTDateString(cur));
+  };
+
+  const handleNextRecordsDay = () => {
+    const base = selectedRecordsDate === 'ALL' ? todayIST : selectedRecordsDate;
+    const cur = new Date(base + 'T00:00:00+05:30');
+    cur.setDate(cur.getDate() + 1);
+    setSelectedRecordsDate(getISTDateString(cur));
   };
 
   const staffDailyReport = useMemo(() => {
@@ -106,18 +128,23 @@ export const StaffSimpleScreen = () => {
     }
   };
 
-  // 1-DAY ACCESS RULE:
-  // Staff can ONLY access today's live data. Older historical data (> 1 day) is restricted to Admin.
-  // Active lorries currently inside are kept so staff can mark OUT.
+  // Staff Movements Filter: Supports viewing Today, Yesterday, Any Past Date, or All Records
   const staffDayMovements = useMemo(() => {
+    if (selectedRecordsDate === 'ALL') {
+      return movements;
+    }
+
     return movements.filter(m => {
       try {
-        return isToday(new Date(m.entry_time)) || (m.is_active_inside && m.status === 'IN');
+        const entryDate = getISTDateString(m.entry_time || m.in_time || m.created_at);
+        const isMatch = entryDate === selectedRecordsDate;
+        const isTodaySelected = selectedRecordsDate === todayIST;
+        return isMatch || (isTodaySelected && m.is_active_inside && m.status === 'IN');
       } catch {
         return false;
       }
     });
-  }, [movements]);
+  }, [movements, selectedRecordsDate, todayIST]);
 
   // Overall Count of Vehicles going for 2 or more trips today
   const tripStats = useMemo(() => {
@@ -172,7 +199,7 @@ export const StaffSimpleScreen = () => {
       });
     }
 
-    return list;
+    return [...list].sort((a, b) => new Date(b.entry_time || 0) - new Date(a.entry_time || 0));
   }, [staffDayMovements, activeFilter, tripStats.multiTripVehiclesMap, searchQuery]);
 
   // Helper to determine exact trip number for any row
@@ -613,7 +640,7 @@ export const StaffSimpleScreen = () => {
               {tripStats.totalTripsCount}
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight font-medium">
-              {tripStats.totalVehiclesCount} lorries today
+              {tripStats.totalVehiclesCount} {tripStats.totalVehiclesCount === 1 ? 'lorry' : 'lorries'} ({selectedRecordsDate === todayIST ? 'today' : selectedRecordsDate === yesterdayIST ? 'yesterday' : selectedRecordsDate === 'ALL' ? 'all time' : formatISTDisplayDate(selectedRecordsDate)})
             </div>
           </button>
 
@@ -623,7 +650,7 @@ export const StaffSimpleScreen = () => {
         {tripStats.multiTripVehiclesList.length > 0 && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs">
             <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Vehicles with 2 or more trips today ({tripStats.multiTripVehiclesCount}):</span>
+              <span>Vehicles with 2 or more trips ({tripStats.multiTripVehiclesCount}):</span>
               {activeFilter !== 'ALL' && (
                 <button
                   onClick={() => setActiveFilter('ALL')}
@@ -652,41 +679,122 @@ export const StaffSimpleScreen = () => {
         {/* RECORD DISPLAY TABLE */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-colors">
           
-          {/* Table Header Filter indicator & Search */}
-          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-2.5">
-              <span className="text-slate-800 dark:text-slate-200 font-extrabold uppercase tracking-wider text-[11px] sm:text-xs whitespace-nowrap">
-                {activeFilter === 'MULTI_TRIP' 
-                  ? 'Filtered: Vehicles with 2+ Trips Only' 
-                  : activeFilter === 'INSIDE' 
-                    ? 'Filtered: Inside Now Only' 
-                    : "Today's Lorry Records"}
-              </span>
-              <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-300/60 dark:border-slate-700/80">
-                {displayedMovements.length} of {tripStats.totalTripsCount}
-              </span>
-            </div>
+          {/* Table Header: Title, Date Navigation & Search */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
+            {/* Top Bar: Title & Date Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-900 dark:text-white font-extrabold uppercase tracking-wider text-xs sm:text-sm">
+                  {selectedRecordsDate === todayIST
+                    ? "Today's Lorry Records"
+                    : selectedRecordsDate === yesterdayIST
+                    ? "Yesterday's Lorry Records"
+                    : selectedRecordsDate === 'ALL'
+                    ? "All Lorry Records"
+                    : `Lorry Records (${formatISTDisplayDate(selectedRecordsDate)})`}
+                </span>
+                <span className="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-300 bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-300 dark:border-slate-700">
+                  {displayedMovements.length} {displayedMovements.length === 1 ? 'record' : 'records'}
+                </span>
+              </div>
 
-            {/* Lorry Search Field: Search by last 4 digits or any part of the registration number */}
-            <div className="relative flex items-center w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search 4 digits (e.g. 5432)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
-              />
-              {searchQuery && (
+              {/* Date Navigation Controls */}
+              <div className="flex items-center space-x-1.5">
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                  title="Clear search"
+                  onClick={handlePrevRecordsDay}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  title="Previous Day"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-              )}
+
+                <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 mr-1.5 shrink-0" />
+                  <input
+                    type="date"
+                    value={selectedRecordsDate === 'ALL' ? todayIST : selectedRecordsDate}
+                    onChange={(e) => setSelectedRecordsDate(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-slate-900 dark:text-white outline-none cursor-pointer"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextRecordsDay}
+                  disabled={selectedRecordsDate >= todayIST && selectedRecordsDate !== 'ALL'}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Next Day"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Bar: Quick Filter Pills & Lorry Search */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+              {/* Quick Date Pills */}
+              <div className="flex items-center space-x-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRecordsDate(todayIST)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                    selectedRecordsDate === todayIST
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Today
+                </button>
+
+                {availableDates.length > 0 && availableDates[0] !== todayIST && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRecordsDate(availableDates[0])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                      selectedRecordsDate === availableDates[0]
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                    }`}
+                  >
+                    Previous Day ({formatISTDisplayDate(availableDates[0])})
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedRecordsDate('ALL')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                    selectedRecordsDate === 'ALL'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  All Dates ({movements.length})
+                </button>
+              </div>
+
+              {/* Lorry Search Field */}
+              <div className="relative flex items-center w-full sm:w-60">
+                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search 4 digits (e.g. 5432)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 rounded-xl pl-8 pr-8 py-1 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-emerald-300 placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 shadow-2xs transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -720,11 +828,38 @@ export const StaffSimpleScreen = () => {
                             <span>Clear Search</span>
                           </button>
                         </div>
-                      ) : activeFilter === 'MULTI_TRIP'
-                        ? 'No vehicles have completed 2 or more trips yet today.'
-                        : activeFilter === 'INSIDE'
-                          ? 'No lorries currently inside the facility.'
-                          : 'No lorry records for today. Enter a lorry number above and click IN.'}
+                      ) : (
+                        <div className="space-y-2.5">
+                          <p>
+                            No lorry records found for{' '}
+                            <strong className="text-slate-700 dark:text-slate-300">
+                              {selectedRecordsDate === todayIST
+                                ? 'today'
+                                : selectedRecordsDate === yesterdayIST
+                                ? 'yesterday'
+                                : formatISTDisplayDate(selectedRecordsDate)}
+                            </strong>.
+                          </p>
+                          {availableDates.length > 0 && availableDates[0] !== selectedRecordsDate && (
+                            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRecordsDate(availableDates[0])}
+                                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95"
+                              >
+                                <span>View Previous Day's Records ({formatISTDisplayDate(availableDates[0])})</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRecordsDate('ALL')}
+                                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition active:scale-95"
+                              >
+                                <span>View All Records ({movements.length})</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (
