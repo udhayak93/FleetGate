@@ -183,6 +183,53 @@ export function calculateDailyReport(movements, selectedDateStr) {
     }
   });
 
+  // Calculate 2+ Trips and Inside Now for the selected date
+  const multiTripVehiclesCount = trips2 + trips3 + trips4 + trips5Plus;
+  const insideNowCount = pendingOut;
+
+  // Build sorted individual lorry records with accurate visit trip numbers
+  // Group by plate to find chronological visit index for each record
+  const plateVisitsMap = {};
+  // Sort day movements by entry time
+  const sortedDayMovements = [...dayMovements].sort((a, b) => {
+    const timeA = new Date(a.entry_time || a.in_time || 0).getTime();
+    const timeB = new Date(b.entry_time || b.in_time || 0).getTime();
+    return timeA - timeB;
+  });
+
+  const individualRecords = sortedDayMovements.map((m, index) => {
+    const rawPlate = m.plate_number || m.vehicle_number || '';
+    const compact = normalizePlate(rawPlate);
+    plateVisitsMap[compact] = (plateVisitsMap[compact] || 0) + 1;
+    const visitTripNumber = m.trip_number || m.visit_number || plateVisitsMap[compact];
+
+    const hasExited = (m.exit_time || m.out_time) && m.status !== 'inside' && m.status !== 'IN' && !m.is_active_inside;
+    const statusText = hasExited ? 'Completed' : 'Inside';
+    const vehicleType = m.wheel_type || m.vehicle_type || '12 Wheel';
+    const inTimeFormatted = formatISTDateTime(m.entry_time || m.in_time || m.created_at);
+    const outTimeFormatted = hasExited ? formatISTDateTime(m.exit_time || m.out_time) : 'Pending OUT';
+    const locationOrRemarks = m.remarks || m.entry_notes || m.location || m.gate || m.exit_remarks || m.exit_notes || '-';
+
+    return {
+      index: index + 1,
+      id: m.id,
+      plate_number: rawPlate.trim() || compact,
+      compact,
+      vehicle_type: vehicleType,
+      wheel_type: vehicleType,
+      trip_number: visitTripNumber,
+      trip_label: `Trip ${visitTripNumber}`,
+      entry_time: m.entry_time || m.in_time,
+      in_time_formatted: inTimeFormatted,
+      exit_time: m.exit_time || m.out_time,
+      out_time_formatted: outTimeFormatted,
+      status: statusText,
+      is_inside: !hasExited,
+      remarks: locationOrRemarks,
+      raw: m
+    };
+  });
+
   return {
     date: selectedDateStr,
     displayDate: formatISTDisplayDate(selectedDateStr),
@@ -191,6 +238,8 @@ export function calculateDailyReport(movements, selectedDateStr) {
     totalIn,
     totalOut,
     pendingOut,
+    multiTripVehiclesCount,
+    insideNowCount,
     tripCategories: {
       trips1,
       trips2,
@@ -199,6 +248,7 @@ export function calculateDailyReport(movements, selectedDateStr) {
       trips5Plus
     },
     vehicleWiseRows,
+    individualRecords,
     rawMovements: dayMovements
   };
 }

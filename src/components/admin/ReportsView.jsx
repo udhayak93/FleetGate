@@ -35,7 +35,6 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
   const todayIST = useMemo(() => getISTDateString(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayIST);
   const [availableDates, setAvailableDates] = useState([todayIST]);
-  const [vehicleSearch, setVehicleSearch] = useState('');
 
   // Weekly States
   const [savedWeeklySummaries, setSavedWeeklySummaries] = useState([]);
@@ -115,15 +114,6 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
   const dailyReport = useMemo(() => {
     return calculateDailyReport(movements, selectedDate);
   }, [movements, selectedDate]);
-
-  // Filter vehicle rows by search query
-  const filteredVehicleRows = useMemo(() => {
-    if (!vehicleSearch.trim()) return dailyReport.vehicleWiseRows;
-    const q = vehicleSearch.toUpperCase().replace(/\s+/g, '');
-    return dailyReport.vehicleWiseRows.filter(r => 
-      r.compact.includes(q) || r.plate_number.toUpperCase().includes(q)
-    );
-  }, [dailyReport.vehicleWiseRows, vehicleSearch]);
 
   // ── Weekly Report Calculations ──────────────────────────────────────────────
   const activeWeeklyReport = useMemo(() => {
@@ -322,6 +312,45 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
             </div>
           </div>
         </div>
+
+        {/* Additional Summary Information Directly Below Total Trips Summary Area */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          {/* 2+ Trips */}
+          <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3.5 flex items-center justify-between transition-colors">
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[11px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">
+                  2+ Trips
+                </span>
+                <span className="text-xs">🔄</span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Vehicles with two or more trips on {dailyReport.displayDate}
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
+              {dailyReport.multiTripVehiclesCount}
+            </div>
+          </div>
+
+          {/* Inside Now */}
+          <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3.5 flex items-center justify-between transition-colors">
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                  Inside Now
+                </span>
+                <span className="text-xs">🟢</span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Vehicles currently inside facility (Pending OUT)
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+              {dailyReport.insideNowCount}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* =========================================================================
@@ -403,163 +432,50 @@ export const ReportsView = ({ movements = [], onRefresh }) => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {/* 1st Trip */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 text-center">
-              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">1st Trip</div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+            {/* 1st Trip - Blue */}
+            <div className="bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70 rounded-xl p-3 text-center transition-colors">
+              <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">1st Trip</div>
+              <div className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">
                 {dailyReport.tripCategories.trips1}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Vehicles (1 trip only)</div>
+              <div className="text-[10px] text-blue-500/80 dark:text-blue-400/70 mt-0.5">Vehicles (1 trip only)</div>
             </div>
 
-            {/* 2nd Trip */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 text-center">
-              <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase">2nd Trip</div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+            {/* 2nd Trip - Green */}
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 rounded-xl p-3 text-center transition-colors">
+              <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">2nd Trip</div>
+              <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
                 {dailyReport.tripCategories.trips2}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Vehicles (2 trips only)</div>
+              <div className="text-[10px] text-emerald-500/80 dark:text-emerald-400/70 mt-0.5">Vehicles (2 trips only)</div>
             </div>
 
-            {/* 3rd Trip */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 text-center">
-              <div className="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase">3rd Trip</div>
-              <div className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 mt-1">
+            {/* 3rd Trip - Purple */}
+            <div className="bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/70 rounded-xl p-3 text-center transition-colors">
+              <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">3rd Trip</div>
+              <div className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-300 mt-1">
                 {dailyReport.tripCategories.trips3}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Vehicles (3 trips only)</div>
+              <div className="text-[10px] text-purple-500/80 dark:text-purple-400/70 mt-0.5">Vehicles (3 trips only)</div>
             </div>
 
-            {/* 4th Trip */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 text-center">
-              <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase">4th Trip</div>
-              <div className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+            {/* 4th Trip - Orange */}
+            <div className="bg-orange-50/50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/70 rounded-xl p-3 text-center transition-colors">
+              <div className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">4th Trip</div>
+              <div className="text-xl sm:text-2xl font-black text-orange-700 dark:text-orange-300 mt-1">
                 {dailyReport.tripCategories.trips4}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Vehicles (4 trips only)</div>
+              <div className="text-[10px] text-orange-500/80 dark:text-orange-400/70 mt-0.5">Vehicles (4 trips only)</div>
             </div>
 
-            {/* 5th Trip & Above */}
-            <div className="col-span-2 sm:col-span-1 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 text-center">
-              <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">5+ Trips</div>
-              <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+            {/* 5th Trip & Above - Teal */}
+            <div className="col-span-2 sm:col-span-1 bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 rounded-xl p-3 text-center transition-colors">
+              <div className="text-[11px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">5+ Trips</div>
+              <div className="text-xl sm:text-2xl font-black text-teal-700 dark:text-teal-300 mt-1">
                 {dailyReport.tripCategories.trips5Plus}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">5 or more trips</div>
+              <div className="text-[10px] text-teal-500/80 dark:text-teal-400/70 mt-0.5">5 or more trips</div>
             </div>
-          </div>
-        </div>
-
-        {/* ── Sub-section 2.2: Vehicle-Wise Trip Summary Table ── */}
-        <div className="mt-7">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                <Truck className="w-4 h-4 text-amber-500" />
-                <span>Vehicle-Wise Trip Summary ({filteredVehicleRows.length} vehicles)</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Summary of vehicles, trip count, and final total count for {dailyReport.displayDate}.
-              </p>
-            </div>
-
-            {/* In-table vehicle search */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search plate (e.g. 2567)..."
-                value={vehicleSearch}
-                onChange={(e) => setVehicleSearch(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-1 focus:ring-amber-500 font-mono"
-              />
-            </div>
-          </div>
-
-          {/* Table Container */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="py-2.5 px-3 w-12 text-center">#</th>
-                  <th className="py-2.5 px-3">Lorry Number</th>
-                  <th className="py-2.5 px-3">Trips Completed</th>
-                  <th className="py-2.5 px-3">Remarks</th>
-                  <th className="py-2.5 px-3 text-center w-28">Total Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
-                {filteredVehicleRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
-                      No vehicle records found for {dailyReport.displayDate}.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredVehicleRows.map((row, idx) => (
-                    <tr 
-                      key={row.compact}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      {/* S.No */}
-                      <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs">
-                        {idx + 1}
-                      </td>
-
-                      {/* Lorry Number */}
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                        <span className="text-sm tracking-wide">{row.plate_number}</span>
-                      </td>
-
-                      {/* How Many Trips */}
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold ${
-                          row.total_trips >= 3
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                            : row.total_trips === 2
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
-                        }`}>
-                          {row.total_trips} {row.total_trips === 1 ? 'Trip' : 'Trips'}
-                        </span>
-                      </td>
-
-                      {/* Remarks */}
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate" title={row.remarks}>
-                        {row.remarks || '-'}
-                      </td>
-
-                      {/* Total Count */}
-                      <td className="py-2.5 px-3 text-center font-mono font-extrabold text-slate-900 dark:text-white">
-                        <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-amber-600 dark:text-amber-400 font-black">
-                          {row.total_trips}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-
-              {/* Total Count Summary Footer */}
-              {filteredVehicleRows.length > 0 && (
-                <tfoot className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700 font-bold text-xs">
-                  <tr>
-                    <td colSpan={2} className="py-3 px-3 text-slate-900 dark:text-white uppercase tracking-wider">
-                      TOTAL UNIQUE VEHICLES: <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm ml-1">{filteredVehicleRows.length}</span>
-                    </td>
-                    <td colSpan={2} className="py-3 px-3 text-slate-500 dark:text-slate-400">
-                      Summary for {dailyReport.displayDate}
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase mr-1.5 font-bold">TOTAL TRIPS:</span>
-                      <span className="font-black text-amber-600 dark:text-amber-400 text-sm px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                        {filteredVehicleRows.reduce((sum, r) => sum + r.total_trips, 0)}
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
           </div>
         </div>
       </section>
