@@ -11,7 +11,21 @@ let cachedDb = null;
 let movementsCol = null;
 let staffCol = null;
 let weeklySummariesCol = null;
+let teamsCol = null;
 let lastMaintenanceTime = null;
+
+function serializeTeamDoc(doc) {
+  if (!doc) return null;
+  const { _id, ...rest } = doc;
+  return {
+    ...rest,
+    _id: _id?.toString(),
+    id: rest.id || _id?.toString(),
+    name: rest.name || '',
+    members: rest.members || '',
+    is_active: rest.is_active !== undefined ? Boolean(rest.is_active) : true
+  };
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://fleetgate_user:FgSp7FgcnsRXS9@todocluster.ae0cziu.mongodb.net/?retryWrites=true&w=majority&appName=TodoCluster';
 const DB_NAME = process.env.DB_NAME || 'FleetGate';
@@ -35,6 +49,20 @@ async function getDB() {
   movementsCol = cachedDb.collection('movements');
   staffCol = cachedDb.collection('staff');
   weeklySummariesCol = cachedDb.collection('weekly_summaries');
+  teamsCol = cachedDb.collection('teams');
+
+  // Seed Default Teams (Team 1 & 2 enabled, Team 3 & 4 disabled)
+  try {
+    const teamsCount = await teamsCol.countDocuments();
+    if (teamsCount === 0) {
+      await teamsCol.insertMany([
+        { id: 'team-1', name: 'Team 1', members: 'Saravanan & Muthuraj', is_active: true, created_at: new Date() },
+        { id: 'team-2', name: 'Team 2', members: 'Murugan & Tamil', is_active: true, created_at: new Date() },
+        { id: 'team-3', name: 'Team 3', members: 'Unassigned', is_active: false, created_at: new Date() },
+        { id: 'team-4', name: 'Team 4', members: 'Unassigned', is_active: false, created_at: new Date() }
+      ]);
+    }
+  } catch (_) {}
 
   // Ensure Admin account exists
   try {
@@ -534,6 +562,9 @@ export default async function handler(req, res) {
         entry_time: new Date(entryTime),
         exit_time: null,
         remarks: (body.remarks || body.entryNotes || body.entry_notes || '').trim(),
+        team: (body.team || body.team_name || 'Team 1').trim(),
+        team_name: (body.team_name || body.team || 'Team 1').trim(),
+        team_id: body.team_id || '',
         entry_gate: body.entryGate || 'Main Gate',
         exit_gate: null,
         status: 'inside',
@@ -587,6 +618,11 @@ export default async function handler(req, res) {
         updateData.vehicle_number = normalizeVehicle(p);
       }
       if (body.remarks !== undefined) updateData.remarks = body.remarks.trim();
+      if (body.team_name !== undefined) {
+        updateData.team_name = body.team_name ? body.team_name.trim() : null;
+        updateData.team = updateData.team_name;
+      }
+      if (body.team_id !== undefined) updateData.team_id = body.team_id;
       if (body.in_time || body.entry_time) updateData.entry_time = new Date(body.in_time || body.entry_time);
       if (body.out_time || body.exit_time) {
         updateData.exit_time = new Date(body.out_time || body.exit_time);
@@ -732,6 +768,71 @@ export default async function handler(req, res) {
     if (path_ === '/api/reports/maintenance' && method === 'POST') {
       const result = await runWeeklyMaintenance(movementsCol, weeklySummariesCol);
       return json(res, 200, { success: true, result });
+    }
+
+    // ── Teams: List all teams (GET)
+    if (path_ === '/api/teams' && method === 'GET') {
+      const teams = await teamsCol.find({}).sort({ created_at: 1 }).toArray();
+      return json(res, 200, { success: true, teams: teams.map(serializeTeamDoc) });
+    }
+
+    // ── Teams: Create Team (POST)
+    if (path_ === '/api/teams' && method === 'POST') {
+      const body = await readBody(req);
+      const name = (body.name || '').trim();
+      if (!name) return json(res, 400, { success: false, error: 'Team name is required' });
+      const members = (body.members || '').trim() || 'Unassigned';
+      const isActive = body.is_active !== undefined ? Boolean(body.is_active) : true;
+
+      const team = {
+        id: `team-${Date.now()}`,
+        name,
+        members,
+        is_active: isActive,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      await teamsCol.insertOne(team);
+      return json(res, 201, { success: true, team: serializeTeamDoc(team) });
+    }
+
+    // ── Teams: Update Team (PUT)
+    if (path_.startsWith('/api/teams/') && method === 'PUT') {
+      const id = path_.split('/')[3];
+      const body = await readBody(req);
+      const updateData = { updated_at: new Date() };
+      if (body.name) updateData.name = body.name.trim();
+      if (body.members !== undefined) updateData.members = body.members.trim();
+      if (body.is_active !== undefined) updateData.is_active = Boolean(body.is_active);
+
+      await teamsCol.updateOne({ id }, { $set: updateData });
+      const updated = await teamsCol.findOne({ id });
+      return json(res, 200, { success: true, team: serializeTeamDoc(updated) });
+    }
+
+    // ── Teams: Delete Team (DELETE)
+    if (path_.startsWith('/api/teams/') && method === 'DELETE') {
+      const id = path_.split('/')[3];
+      await teamsCol.deleteOne({ id });
+      return json(res, 200, { success: true, message: 'Team deleted' });
+    }
+
+    // ── Clear Today's Data (Strictly after 12:00 AM IST of today)
+    if (path_ === '/api/clear-today' && method === 'POST') {
+      const todayISTStr = getISTDateStr(new Date());
+
+      const allMovs = await movementsCol.find({}).toArray();
+      const todayIds = allMovs
+        .filter(m => getISTDateStr(m.entry_time || m.in_time || m.created_at) === todayISTStr)
+        .map(m => m._id);
+
+      let clearedCount = 0;
+      if (todayIds.length > 0) {
+        const resDel = await movementsCol.deleteMany({ _id: { $in: todayIds } });
+        clearedCount = resDel.deletedCount;
+      }
+
+      return json(res, 200, { success: true, cleared: clearedCount, date: todayISTStr });
     }
 
     // ── Reset All (dev only)

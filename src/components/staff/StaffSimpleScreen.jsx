@@ -314,7 +314,7 @@ export const StaffSimpleScreen = () => {
       remarks: remarks.trim(),
       entryNotes: remarks.trim(),
       team: activeTeam ? activeTeam.name : 'Team 1',
-      team_name: activeTeam ? `${activeTeam.name}: ${activeTeam.members}` : 'Team 1: Saravanan & Muthuraj',
+      team_name: activeTeam ? activeTeam.name : 'Team 1',
       team_id: activeTeam?.id || selectedTeamId,
       entryTime: exactMobileIso
     });
@@ -1223,21 +1223,17 @@ export const StaffSimpleScreen = () => {
                           </div>
                         </td>
 
-                        {/* Duty Team — Clean mention (e.g. Team 1, Team 2) */}
+                        {/* Duty Team — Simple clean mention (Team 1, Team 2, etc.) */}
                         <td className="py-3.5 px-3 sm:px-4 text-xs whitespace-nowrap">
-                          {(() => {
-                            let teamBadge = mov.team;
-                            if (!teamBadge && mov.team_name) {
-                              teamBadge = mov.team_name.split(':')[0].trim();
-                            }
-                            return teamBadge ? (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono">
-                                {teamBadge}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 dark:text-slate-600 font-mono text-xs">-</span>
-                            );
-                          })()}
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono">
+                            {(() => {
+                              let t = mov.team || mov.team_name;
+                              if (t && t.includes(':')) {
+                                t = t.split(':')[0].trim();
+                              }
+                              return t || 'Team 1';
+                            })()}
+                          </span>
                         </td>
 
                         {/* Remarks (Entry & Exit Notes) */}
