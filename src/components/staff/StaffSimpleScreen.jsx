@@ -42,10 +42,6 @@ export const StaffSimpleScreen = () => {
     return 'team-1';
   });
 
-  // Staff Quick Add Team Modal State
-  const [isStaffAddTeamOpen, setIsStaffAddTeamOpen] = useState(false);
-  const [staffNewTeamName, setStaffNewTeamName] = useState('');
-  const [staffNewTeamMembers, setStaffNewTeamMembers] = useState('');
   const [teamFilter, setTeamFilter] = useState('ALL'); // 'ALL' | team name
 
   const activeTeam = useMemo(() => {
@@ -215,6 +211,34 @@ export const StaffSimpleScreen = () => {
       }))
     };
   }, [staffDayMovements]);
+
+  // Team vehicle and trip counts for today's movements
+  const teamVehicleCounts = useMemo(() => {
+    const counts = {};
+    teams.forEach(t => {
+      counts[t.name] = {
+        name: t.name,
+        members: t.members,
+        is_active: t.is_active,
+        uniquePlates: new Set(),
+        trips: 0
+      };
+    });
+
+    staffDayMovements.forEach(m => {
+      let tName = m.team;
+      if (!tName && m.team_name) {
+        tName = m.team_name.split(':')[0].trim();
+      }
+      if (tName && counts[tName]) {
+        counts[tName].trips += 1;
+        const compact = (m.plate_number || '').toUpperCase().replace(/\s+/g, '');
+        if (compact) counts[tName].uniquePlates.add(compact);
+      }
+    });
+
+    return counts;
+  }, [teams, staffDayMovements]);
 
   // Filtered movements for display based on staff filter selection and lorry search
   const displayedMovements = useMemo(() => {
@@ -567,27 +591,31 @@ export const StaffSimpleScreen = () => {
                 )}
               </div>
 
-              {/* Field 2: Team Selection Dropdown (Placed next to OUT section) */}
+              {/* Field 2: Team Selection Dropdown (Placed next to OUT section with live vehicle count) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center space-x-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
-                      <span>Duty Team</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsStaffAddTeamOpen(true)}
-                      className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-200 transition cursor-pointer"
-                      title="Add a new duty team"
-                    >
-                      + Add Team
-                    </button>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                    <Users className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Duty Team</span>
+                  </label>
+                  {/* Live Team Vehicle Count Badges */}
+                  <div className="flex items-center space-x-1.5">
+                    {teams.filter(t => t.is_active).map(t => {
+                      const vCount = teamVehicleCounts[t.name]?.uniquePlates.size || 0;
+                      return (
+                        <span
+                          key={t.id}
+                          className={`text-[10px] font-black px-2 py-0.5 rounded-md border transition ${
+                            selectedTeamId === t.id
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                              : 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                          }`}
+                        >
+                          {t.name}: {vCount} Vehicles
+                        </span>
+                      );
+                    })}
                   </div>
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Gate Shift</span>
-                  </span>
                 </div>
 
                 <select
@@ -599,28 +627,27 @@ export const StaffSimpleScreen = () => {
                   }}
                   className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-xs transition-colors cursor-pointer"
                 >
-                  {teams.map(t => (
-                    <option
-                      key={t.id}
-                      value={t.id}
-                      disabled={!t.is_active}
-                      className={!t.is_active ? 'text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-900 font-normal italic' : 'text-slate-900 dark:text-white font-semibold'}
-                    >
-                      {t.name} — {t.members} {!t.is_active ? '(Disabled)' : ''}
-                    </option>
-                  ))}
+                  {teams.map(t => {
+                    const vCount = teamVehicleCounts[t.name]?.uniquePlates.size || 0;
+                    return (
+                      <option
+                        key={t.id}
+                        value={t.id}
+                        disabled={!t.is_active}
+                        className={!t.is_active ? 'text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-900 font-normal italic' : 'text-slate-900 dark:text-white font-semibold'}
+                      >
+                        {t.name} — {t.members} ({vCount} vehicles today) {!t.is_active ? '(Disabled)' : ''}
+                      </option>
+                    );
+                  })}
                 </select>
 
                 <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="truncate">
                     Staff: <strong className="text-slate-800 dark:text-slate-200">{activeTeam?.members || 'Unassigned'}</strong>
                   </span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                    activeTeam?.is_active 
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' 
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                  }`}>
-                    {activeTeam?.is_active ? 'Active' : 'Disabled'}
+                  <span className="font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                    {activeTeam?.name}: <strong>{teamVehicleCounts[activeTeam?.name]?.uniquePlates.size || 0} Vehicles</strong> ({teamVehicleCounts[activeTeam?.name]?.trips || 0} Trips Today)
                   </span>
                 </div>
               </div>
@@ -951,6 +978,29 @@ export const StaffSimpleScreen = () => {
           
           {/* Table Header: Title, Date Navigation & Search */}
           <div className="p-3.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
+            {/* Team Vehicle Counts Summary Bar */}
+            <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Team Vehicle Count:
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {teams.filter(t => t.is_active).map(t => {
+                  const vCount = teamVehicleCounts[t.name]?.uniquePlates.size || 0;
+                  const tCount = teamVehicleCounts[t.name]?.trips || 0;
+                  return (
+                    <span
+                      key={t.id}
+                      className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-lg text-xs font-black bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                    >
+                      <span>{t.name}:</span>
+                      <span className="font-mono text-blue-900 dark:text-blue-100">{vCount} vehicles</span>
+                      <span className="text-[10px] text-blue-500 dark:text-blue-400 font-normal">({tCount} trips)</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Top Bar: Title & Date Selector */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center space-x-2">
@@ -1173,36 +1223,21 @@ export const StaffSimpleScreen = () => {
                           </div>
                         </td>
 
-                        {/* Duty Team — Interactive Selector for Staff Access */}
+                        {/* Duty Team — Clean mention (e.g. Team 1, Team 2) */}
                         <td className="py-3.5 px-3 sm:px-4 text-xs whitespace-nowrap">
-                          <div className="flex items-center space-x-1.5">
-                            <select
-                              value={mov.team_name || mov.team || ''}
-                              onChange={async (e) => {
-                                const val = e.target.value;
-                                if (val === '__ADD_NEW__') {
-                                  setIsStaffAddTeamOpen(true);
-                                  return;
-                                }
-                                const matched = teams.find(t => t.name === val);
-                                await assignMovementTeam(mov.id || mov._id, val || null, matched ? matched.id : null);
-                              }}
-                              className={`text-xs font-bold rounded-lg px-2 py-1 border transition-colors cursor-pointer outline-none ${
-                                mov.team_name || mov.team
-                                  ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800/80'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700'
-                              }`}
-                              title="Assign or change duty team (e.g. Team 1, Team 2)"
-                            >
-                              <option value="">+ Add Duty Team</option>
-                              {teams.map(t => (
-                                <option key={t.id} value={t.name}>
-                                  {t.name} {t.members ? `(${t.members})` : ''}
-                                </option>
-                              ))}
-                              <option value="__ADD_NEW__">+ Create New Team...</option>
-                            </select>
-                          </div>
+                          {(() => {
+                            let teamBadge = mov.team;
+                            if (!teamBadge && mov.team_name) {
+                              teamBadge = mov.team_name.split(':')[0].trim();
+                            }
+                            return teamBadge ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono">
+                                {teamBadge}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-600 font-mono text-xs">-</span>
+                            );
+                          })()}
                         </td>
 
                         {/* Remarks (Entry & Exit Notes) */}
@@ -1425,90 +1460,7 @@ export const StaffSimpleScreen = () => {
       </main>
 
             {/* ================= MODAL: QUICK OUT PICKER ================= */}
-      {/* ================= MODAL: STAFF QUICK ADD DUTY TEAM ================= */}
-      {isStaffAddTeamOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                <Users className="w-4 h-4 text-blue-500" />
-                <span>Add Duty Team</span>
-              </h3>
-              <button 
-                onClick={() => setIsStaffAddTeamOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!staffNewTeamName.trim()) return;
-                const newTeam = await addTeam({
-                  name: staffNewTeamName.trim(),
-                  members: staffNewTeamMembers.trim(),
-                  is_active: true
-                });
-                if (newTeam && newTeam.id) {
-                  setSelectedTeamId(newTeam.id);
-                  try { localStorage.setItem('fleetgate_active_team', newTeam.id); } catch {}
-                }
-                setStaffNewTeamName('');
-                setStaffNewTeamMembers('');
-                setIsStaffAddTeamOpen(false);
-              }}
-              className="space-y-3"
-            >
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Team Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Team 3, Team-5"
-                  value={staffNewTeamName}
-                  onChange={(e) => setStaffNewTeamName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Staff Personnel
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Ramesh & Suresh"
-                  value={staffNewTeamMembers}
-                  onChange={(e) => setStaffNewTeamMembers(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsStaffAddTeamOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md transition cursor-pointer"
-                >
-                  Save Team
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isQuickOutPickerOpen && (
+{isQuickOutPickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
