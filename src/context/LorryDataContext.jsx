@@ -396,7 +396,9 @@ export const LorryDataProvider = ({ children }) => {
           plate_number: updatedFields.plate_number,
           remarks: updatedFields.remarks || updatedFields.entry_notes,
           in_time: updatedFields.entry_time || updatedFields.in_time,
-          out_time: updatedFields.exit_time || updatedFields.out_time
+          out_time: updatedFields.exit_time || updatedFields.out_time,
+          team_name: updatedFields.team_name,
+          team_id: updatedFields.team_id
         })
       });
 
@@ -431,19 +433,56 @@ export const LorryDataProvider = ({ children }) => {
     }
   };
 
+  // Assign or update Duty Team on any movement (accessible to Staff and Admin)
+  const assignMovementTeam = async (movementId, teamName, teamId = null) => {
+    try {
+      const res = await apiFetch(`/api/movements/${movementId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          team_name: teamName || null,
+          team_id: teamId || null
+        })
+      });
+
+      // Optimistic update so UI reflects immediately
+      setMovements(prev => prev.map(m => {
+        if (m.id === movementId || m._id === movementId) {
+          return { ...m, team_name: teamName, team: teamName, team_id: teamId };
+        }
+        return m;
+      }));
+
+      if (res.ok) {
+        return { success: true };
+      }
+      return { success: false };
+    } catch (err) {
+      console.error('Failed to assign team to movement:', err);
+      setMovements(prev => prev.map(m => {
+        if (m.id === movementId || m._id === movementId) {
+          return { ...m, team_name: teamName, team: teamName, team_id: teamId };
+        }
+        return m;
+      }));
+      return { success: true };
+    }
+  };
+
   const clearDailyData = async () => {
     if (!profile || profile.role !== 'admin') {
       return { success: false, error: 'Access Denied: Only Admin can clear data.' };
     }
 
     try {
-      const res = await apiFetch('/api/reset-all', { method: 'POST' });
+      // Clear ONLY today's data (movements strictly after 12:00 AM IST of today)
+      const res = await apiFetch('/api/clear-today', { method: 'POST' });
       const result = await res.json();
       if (res.ok && result.success) {
         await refreshData();
         return { success: true, count: result.cleared };
       }
-      return { success: false, error: result.error || 'Failed to clear data.' };
+      return { success: false, error: result.error || 'Failed to clear today\'s data.' };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -591,7 +630,8 @@ export const LorryDataProvider = ({ children }) => {
         addTeam,
         updateTeam,
         deleteTeam,
-        toggleTeamStatus
+        toggleTeamStatus,
+        assignMovementTeam
       }}
     >
       {children}

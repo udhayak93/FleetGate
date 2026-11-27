@@ -24,7 +24,9 @@ export const StaffSimpleScreen = () => {
     recordExit,
     isSyncing,
     syncStatus,
-    refreshData 
+    refreshData,
+    assignMovementTeam,
+    addTeam
   } = useLorryData();
   const { login, logout, profile, isAdmin } = useAuth();
 
@@ -39,6 +41,12 @@ export const StaffSimpleScreen = () => {
     } catch (_) {}
     return 'team-1';
   });
+
+  // Staff Quick Add Team Modal State
+  const [isStaffAddTeamOpen, setIsStaffAddTeamOpen] = useState(false);
+  const [staffNewTeamName, setStaffNewTeamName] = useState('');
+  const [staffNewTeamMembers, setStaffNewTeamMembers] = useState('');
+  const [teamFilter, setTeamFilter] = useState('ALL'); // 'ALL' | team name
 
   const activeTeam = useMemo(() => {
     return teams.find(t => t.id === selectedTeamId) || teams.find(t => t.is_active) || teams[0];
@@ -219,6 +227,10 @@ export const StaffSimpleScreen = () => {
       });
     } else if (activeFilter === 'INSIDE') {
       list = list.filter(m => m.is_active_inside && m.status === 'IN');
+    }
+
+    if (teamFilter !== 'ALL') {
+      list = list.filter(m => (m.team_name || m.team) === teamFilter);
     }
 
     if (searchQuery && searchQuery.trim()) {
@@ -558,10 +570,20 @@ export const StaffSimpleScreen = () => {
               {/* Field 2: Team Selection Dropdown (Placed next to OUT section) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                    <Users className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Duty Team</span>
-                  </label>
+                  <div className="flex items-center space-x-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Duty Team</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsStaffAddTeamOpen(true)}
+                      className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-200 transition cursor-pointer"
+                      title="Add a new duty team"
+                    >
+                      + Add Team
+                    </button>
+                  </div>
                   <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>Gate Shift</span>
@@ -1022,6 +1044,21 @@ export const StaffSimpleScreen = () => {
                 </button>
               </div>
 
+              {/* Team Filter Dropdown for Today's Records */}
+              <div className="flex items-center space-x-2 shrink-0">
+                <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Team:</span>
+                <select
+                  value={teamFilter}
+                  onChange={(e) => setTeamFilter(e.target.value)}
+                  className="text-xs font-bold rounded-lg px-2 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer outline-none"
+                >
+                  <option value="ALL">All Teams</option>
+                  {teams.map(t => (
+                    <option key={t.id} value={t.name}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Lorry Search Field */}
               <div className="relative flex items-center w-full sm:w-60">
                 <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
@@ -1136,15 +1173,36 @@ export const StaffSimpleScreen = () => {
                           </div>
                         </td>
 
-                        {/* Duty Team */}
+                        {/* Duty Team — Interactive Selector for Staff Access */}
                         <td className="py-3.5 px-3 sm:px-4 text-xs whitespace-nowrap">
-                          {mov.team_name || mov.team ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              {mov.team_name || mov.team}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 dark:text-slate-600 font-mono text-xs">-</span>
-                          )}
+                          <div className="flex items-center space-x-1.5">
+                            <select
+                              value={mov.team_name || mov.team || ''}
+                              onChange={async (e) => {
+                                const val = e.target.value;
+                                if (val === '__ADD_NEW__') {
+                                  setIsStaffAddTeamOpen(true);
+                                  return;
+                                }
+                                const matched = teams.find(t => t.name === val);
+                                await assignMovementTeam(mov.id || mov._id, val || null, matched ? matched.id : null);
+                              }}
+                              className={`text-xs font-bold rounded-lg px-2 py-1 border transition-colors cursor-pointer outline-none ${
+                                mov.team_name || mov.team
+                                  ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800/80'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+                              }`}
+                              title="Assign or change duty team (e.g. Team 1, Team 2)"
+                            >
+                              <option value="">+ Add Duty Team</option>
+                              {teams.map(t => (
+                                <option key={t.id} value={t.name}>
+                                  {t.name} {t.members ? `(${t.members})` : ''}
+                                </option>
+                              ))}
+                              <option value="__ADD_NEW__">+ Create New Team...</option>
+                            </select>
+                          </div>
                         </td>
 
                         {/* Remarks (Entry & Exit Notes) */}
@@ -1367,6 +1425,89 @@ export const StaffSimpleScreen = () => {
       </main>
 
             {/* ================= MODAL: QUICK OUT PICKER ================= */}
+      {/* ================= MODAL: STAFF QUICK ADD DUTY TEAM ================= */}
+      {isStaffAddTeamOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                <span>Add Duty Team</span>
+              </h3>
+              <button 
+                onClick={() => setIsStaffAddTeamOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!staffNewTeamName.trim()) return;
+                const newTeam = await addTeam({
+                  name: staffNewTeamName.trim(),
+                  members: staffNewTeamMembers.trim(),
+                  is_active: true
+                });
+                if (newTeam && newTeam.id) {
+                  setSelectedTeamId(newTeam.id);
+                  try { localStorage.setItem('fleetgate_active_team', newTeam.id); } catch {}
+                }
+                setStaffNewTeamName('');
+                setStaffNewTeamMembers('');
+                setIsStaffAddTeamOpen(false);
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Team Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Team 3, Team-5"
+                  value={staffNewTeamName}
+                  onChange={(e) => setStaffNewTeamName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Staff Personnel
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ramesh & Suresh"
+                  value={staffNewTeamMembers}
+                  onChange={(e) => setStaffNewTeamMembers(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsStaffAddTeamOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md transition cursor-pointer"
+                >
+                  Save Team
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isQuickOutPickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100">

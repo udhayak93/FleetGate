@@ -805,6 +805,11 @@ async function handleAPI(req, res) {
       updateData.vehicle_number = normalizeVehicle(p);
     }
     if (body.remarks !== undefined) updateData.remarks = body.remarks.trim();
+    if (body.team_name !== undefined) {
+      updateData.team_name = body.team_name ? body.team_name.trim() : null;
+      updateData.team = updateData.team_name;
+    }
+    if (body.team_id !== undefined) updateData.team_id = body.team_id;
     if (body.in_time || body.entry_time) updateData.entry_time = new Date(body.in_time || body.entry_time);
     if (body.out_time || body.exit_time) {
       updateData.exit_time = new Date(body.out_time || body.exit_time);
@@ -956,6 +961,26 @@ async function handleAPI(req, res) {
   if (path_ === '/api/reports/maintenance' && method === 'POST') {
     const result = await runWeeklyMaintenance();
     return json(res, 200, { success: true, result });
+  }
+
+  // ── Clear Today's Movements Only (Strictly after 12:00 AM IST of today) ───────
+  if (path_ === '/api/clear-today' && method === 'POST') {
+    const istFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+    const todayISTStr = istFormatter.format(new Date());
+
+    const allMovs = await movementsCol.find({}).toArray();
+    const todayIds = allMovs
+      .filter(m => getISTDateStr(m.entry_time || m.in_time || m.created_at) === todayISTStr)
+      .map(m => m._id);
+
+    let clearedCount = 0;
+    if (todayIds.length > 0) {
+      const resDel = await movementsCol.deleteMany({ _id: { $in: todayIds } });
+      clearedCount = resDel.deletedCount;
+    }
+
+    broadcast('movement_update', { type: 'clear_today', cleared: clearedCount, date: todayISTStr });
+    return json(res, 200, { success: true, cleared: clearedCount, date: todayISTStr });
   }
 
   // ── Reset DB (dev only)

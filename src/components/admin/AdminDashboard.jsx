@@ -1121,9 +1121,9 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1.5">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Clear All Daily Data?</h3>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Clear Today's Data (After 12:00 AM)?</h3>
               <p className="text-xs text-rose-700 dark:text-rose-300">
-                This will delete all of today's movements ({dashboardStats.todayTripsCount} trips) and reset the live daily gate counters for staff.
+                This will delete <strong>only today's movements ({dashboardStats.todayTripsCount} trips after 12:00 AM)</strong>. All previous days' records and history remain safely preserved.
               </p>
             </div>
             <div className="flex space-x-2 pt-2">
