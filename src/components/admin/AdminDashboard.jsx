@@ -36,7 +36,12 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
     resetAllRecords,
     isSyncing,
     syncStatus,
-    refreshData
+    refreshData,
+    teams,
+    addTeam,
+    updateTeam,
+    deleteTeam,
+    toggleTeamStatus
   } = useLorryData();
 
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'staff'
@@ -59,6 +64,71 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
     isActive: true
   });
   const [staffFormError, setStaffFormError] = useState(null);
+
+  // Team Management Modal & Form States
+  const [isAddTeamModalOpen, setIsAddTeamModalOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [deletingTeamId, setDeletingTeamId] = useState(null);
+  const [teamForm, setTeamForm] = useState({
+    name: '',
+    members: '',
+    is_active: true
+  });
+  const [teamFormError, setTeamFormError] = useState(null);
+
+  const handleOpenAddTeam = () => {
+    setTeamForm({ name: '', members: '', is_active: true });
+    setTeamFormError(null);
+    setIsAddTeamModalOpen(true);
+  };
+
+  const handleOpenEditTeam = (team) => {
+    setEditingTeam(team);
+    setTeamForm({
+      name: team.name || '',
+      members: team.members || '',
+      is_active: Boolean(team.is_active)
+    });
+    setTeamFormError(null);
+  };
+
+  const handleSaveTeam = async (e) => {
+    e.preventDefault();
+    setTeamFormError(null);
+    if (!teamForm.name.trim()) {
+      setTeamFormError('Team name is required (e.g. Team 1)');
+      return;
+    }
+    try {
+      if (editingTeam) {
+        await updateTeam(editingTeam.id, {
+          name: teamForm.name.trim(),
+          members: teamForm.members.trim(),
+          is_active: teamForm.is_active
+        });
+        setEditingTeam(null);
+      } else {
+        await addTeam({
+          name: teamForm.name.trim(),
+          members: teamForm.members.trim(),
+          is_active: teamForm.is_active
+        });
+        setIsAddTeamModalOpen(false);
+      }
+    } catch (err) {
+      setTeamFormError(err.message || 'Failed to save team');
+    }
+  };
+
+  const handleConfirmDeleteTeam = async () => {
+    if (!deletingTeamId) return;
+    try {
+      await deleteTeam(deletingTeamId);
+      setDeletingTeamId(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete team');
+    }
+  };
 
   // Movement Edit Form State
   const [movementForm, setMovementForm] = useState({
@@ -331,6 +401,18 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
           >
             <Users className="w-4 h-4" />
             <span>Staff Database ({allStaff.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('teams')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+              activeTab === 'teams'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Team Management ({(teams || []).length})</span>
           </button>
         </div>
       </div>
@@ -707,6 +789,180 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
           <ReportsView movements={movements} onRefresh={refreshData} />
         )}
 
+        {/* ================= TAB 4: GATE DUTY TEAMS MANAGEMENT ================= */}
+        {activeTab === 'teams' && (
+          <div className="space-y-5 animate-fadeIn">
+            {/* Header & Add Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center space-x-2">
+                  <Users className="w-5 h-5 text-amber-500" />
+                  <span>Gate Duty Teams</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Configure duty teams (Team 1 – Team 4), assign staff personnel, and enable or disable teams for gate entry selection.
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenAddTeam}
+                className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow-md transition shrink-0 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Team</span>
+              </button>
+            </div>
+
+            {/* Team Metrics Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Total Configured Teams
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white mt-1">
+                  {(teams || []).length}
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  All defined shift duty units
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Active & Selectable
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                  {(teams || []).filter(t => t.is_active).length}
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  Available in Staff Entry dropdown
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Disabled / Future
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-slate-500 dark:text-slate-400 mt-1">
+                  {(teams || []).filter(t => !t.is_active).length}
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  Inactive until assigned & activated
+                </div>
+              </div>
+            </div>
+
+            {/* Teams Roster Table */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+              <div className="px-4 sm:px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Team Roster & Staff Assignments
+                </h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {(teams || []).length} teams registered
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 uppercase font-black tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="px-4 py-3">Team Name</th>
+                      <th className="px-4 py-3">Assigned Staff Personnel</th>
+                      <th className="px-4 py-3 text-center">Status</th>
+                      <th className="px-4 py-3 text-center">Quick Toggle</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {(!teams || teams.length === 0) ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-slate-500">
+                          No teams configured yet. Click "+ Add New Team" to create one.
+                        </td>
+                      </tr>
+                    ) : (
+                      teams.map((t) => (
+                        <tr key={t.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <span className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700/60 flex items-center justify-center text-amber-700 dark:text-amber-300 font-black text-xs">
+                                {t.name.replace(/[^0-9]/g, '') || '#'}
+                              </span>
+                              <span className="font-extrabold">{t.name}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300">
+                            {t.members ? (
+                              <div className="flex items-center space-x-2">
+                                <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {t.members}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="italic text-slate-400 dark:text-slate-500">
+                                Not assigned yet
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            {t.is_active ? (
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>Active</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                <span>Disabled</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => toggleTeamStatus(t.id)}
+                              className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition cursor-pointer ${
+                                t.is_active
+                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                              }`}
+                            >
+                              {t.is_active ? 'Disable Team' : 'Enable Team'}
+                            </button>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              <button
+                                onClick={() => handleOpenEditTeam(t)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-amber-950/60 text-slate-700 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                                title="Edit Team & Members"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setDeletingTeamId(t.id)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 transition cursor-pointer"
+                                title="Delete Team"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* ================= MODAL: EDIT MOVEMENT RECORD ================= */}
@@ -1066,6 +1322,125 @@ export const AdminDashboard = ({ onOpenStaffView }) => {
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition"
               >
                 Delete Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: ADD / EDIT TEAM ================= */}
+      {(isAddTeamModalOpen || editingTeam) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <Users className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                <span>{editingTeam ? 'Edit Duty Team' : 'Add New Duty Team'}</span>
+              </h3>
+              <button 
+                onClick={() => { setIsAddTeamModalOpen(false); setEditingTeam(null); }}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {teamFormError && (
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-500/50 rounded-xl text-xs text-rose-700 dark:text-rose-300">
+                {teamFormError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveTeam} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Team Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Team 1, Team 5"
+                  value={teamForm.name}
+                  onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Assigned Staff Personnel
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Saravanan & Muthuraj"
+                  value={teamForm.members}
+                  onChange={(e) => setTeamForm({ ...teamForm, members: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Names of staff members on duty for this team.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                  Duty Status
+                </label>
+                <select
+                  value={teamForm.is_active ? 'active' : 'disabled'}
+                  onChange={(e) => setTeamForm({ ...teamForm, is_active: e.target.value === 'active' })}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                >
+                  <option value="active">Active (Available for gate entry selection)</option>
+                  <option value="disabled">Disabled (Greyed out for future assignment)</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsAddTeamModalOpen(false); setEditingTeam(null); }}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition cursor-pointer"
+                >
+                  {editingTeam ? 'Save Changes' : 'Create Team'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: CONFIRM DELETE TEAM ================= */}
+      {deletingTeamId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-500/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mx-auto">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete Duty Team?</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Are you sure you want to remove this team? Staff will no longer be able to select it for entry movements.
+              </p>
+            </div>
+            <div className="flex space-x-2 pt-2">
+              <button
+                onClick={() => setDeletingTeamId(null)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteTeam}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Delete Team
               </button>
             </div>
           </div>

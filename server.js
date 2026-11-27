@@ -32,6 +32,7 @@ let db;
 let movementsCol;
 let staffCol;
 let weeklySummariesCol;
+let teamsCol;
 let lastMaintenanceTime = null;
 
 async function connectDB() {
@@ -45,6 +46,7 @@ async function connectDB() {
   movementsCol       = db.collection('movements');
   staffCol           = db.collection('staff');
   weeklySummariesCol = db.collection('weekly_summaries');
+  teamsCol           = db.collection('teams');
 
   // Create indexes
   await movementsCol.createIndex({ vehicle_number: 1 });
@@ -53,6 +55,7 @@ async function connectDB() {
   await staffCol.createIndex({ email: 1 }, { unique: true });
   await weeklySummariesCol.createIndex({ week_id: 1 }, { unique: true });
   await weeklySummariesCol.createIndex({ week_start: -1 });
+  await teamsCol.createIndex({ id: 1 }, { unique: true });
 
   // Seed admin if not exists
   const adminExists = await staffCol.findOne({ email: ADMIN_EMAIL });
@@ -73,6 +76,59 @@ async function connectDB() {
   // Seed default gate staff if not exists
   const staffExists = await staffCol.findOne({ email: 'staff@fleetgate.com' });
   if (!staffExists) {
+    await staffCol.insertOne({
+      id: randomUUID(),
+      name: 'Gate Security Staff',
+      full_name: 'Gate Security Staff',
+      email: 'staff@fleetgate.com',
+      password: 'Staff@123',
+      role: 'staff',
+      is_active: true,
+      created_at: new Date(),
+    });
+    console.log('✅ Default Gate Security account seeded');
+  }
+
+  // Seed default teams if not exists
+  const teamsCount = await teamsCol.countDocuments();
+  if (teamsCount === 0) {
+    const initialTeams = [
+      {
+        id: 'team-1',
+        name: 'Team 1',
+        members: 'Saravanan & Muthuraj',
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        id: 'team-2',
+        name: 'Team 2',
+        members: 'Murugan & Tamil',
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        id: 'team-3',
+        name: 'Team 3',
+        members: 'Unassigned',
+        is_active: false,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        id: 'team-4',
+        name: 'Team 4',
+        members: 'Unassigned',
+        is_active: false,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    ];
+    await teamsCol.insertMany(initialTeams);
+    console.log('✅ Default Teams (Team 1 to Team 4) seeded');
+  }
     await staffCol.insertOne({
       id: randomUUID(),
       name: 'Gate Security Staff',
@@ -405,6 +461,21 @@ function serializeStaffDoc(doc) {
   };
 }
 
+function serializeTeamDoc(doc) {
+  if (!doc) return null;
+  const { _id, ...rest } = doc;
+  return {
+    ...rest,
+    _id: _id?.toString(),
+    id: rest.id || _id?.toString(),
+    name: rest.name || '',
+    members: rest.members || '',
+    is_active: rest.is_active !== false,
+    created_at: rest.created_at ? new Date(rest.created_at).toISOString() : new Date().toISOString(),
+    updated_at: rest.updated_at ? new Date(rest.updated_at).toISOString() : new Date().toISOString()
+  };
+}
+
 // ── Route Handler ─────────────────────────────────────────────────────────────
 async function handleAPI(req, res) {
   const url    = new URL(req.url, `http://localhost`);
@@ -568,6 +639,68 @@ async function handleAPI(req, res) {
     return json(res, 200, { success: true });
   }
 
+  // ── Get All Teams
+  if (path_ === '/api/teams' && method === 'GET') {
+    const teams = await teamsCol.find({}).sort({ created_at: 1 }).toArray();
+    return json(res, 200, { success: true, teams: teams.map(serializeTeamDoc) });
+  }
+
+  // ── Create Team (POST)
+  if (path_ === '/api/teams' && method === 'POST') {
+    const body = await readBody(req);
+    const name = (body.name || '').trim();
+    if (!name) return json(res, 400, { success: false, error: 'Team name is required' });
+
+    const newTeam = {
+      id: body.id || randomUUID(),
+      name,
+      members: (body.members || '').trim() || 'Unassigned',
+      is_active: body.is_active !== undefined ? Boolean(body.is_active) : (body.isActive !== undefined ? Boolean(body.isActive) : true),
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    await teamsCol.insertOne(newTeam);
+    const safe = serializeTeamDoc(newTeam);
+    broadcast('teams_update', { type: 'add', team: safe });
+    broadcast('SYNC', { entity: 'teams' });
+    return json(res, 201, { success: true, team: safe });
+  }
+
+  // ── Update Team (PUT)
+  if (path_.startsWith('/api/teams/') && method === 'PUT') {
+    const id = path_.split('/')[3];
+    const body = await readBody(req);
+    const team = await teamsCol.findOne({ id });
+    if (!team) return json(res, 404, { success: false, error: 'Team not found' });
+
+    const updateData = { updated_at: new Date() };
+    if (body.name !== undefined && body.name.trim()) updateData.name = body.name.trim();
+    if (body.members !== undefined) updateData.members = body.members.trim();
+    if (body.is_active !== undefined || body.isActive !== undefined) {
+      updateData.is_active = body.is_active !== undefined ? Boolean(body.is_active) : Boolean(body.isActive);
+    }
+
+    await teamsCol.updateOne({ id }, { $set: updateData });
+    const updated = await teamsCol.findOne({ id });
+    const safe = serializeTeamDoc(updated);
+    broadcast('teams_update', { type: 'update', team: safe });
+    broadcast('SYNC', { entity: 'teams' });
+    return json(res, 200, { success: true, team: safe });
+  }
+
+  // ── Delete Team (DELETE)
+  if (path_.startsWith('/api/teams/') && method === 'DELETE') {
+    const id = path_.split('/')[3];
+    const team = await teamsCol.findOne({ id });
+    if (!team) return json(res, 404, { success: false, error: 'Team not found' });
+
+    await teamsCol.deleteOne({ id });
+    broadcast('teams_update', { type: 'delete', id });
+    broadcast('SYNC', { entity: 'teams' });
+    return json(res, 200, { success: true });
+  }
+
   // ── Get All Movements
   if (path_ === '/api/movements' && method === 'GET') {
     const filter = {};
@@ -615,6 +748,8 @@ async function handleAPI(req, res) {
       entry_time: new Date(entryTime),
       exit_time: null,
       remarks: (body.remarks || body.entryNotes || body.entry_notes || '').trim(),
+      team_id: body.team_id || body.teamId || null,
+      team_name: (body.team_name || body.teamName || body.team || '').trim() || null,
       entry_gate: body.entryGate || 'Main Gate',
       exit_gate: null,
       status: 'inside',

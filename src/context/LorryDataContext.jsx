@@ -8,6 +8,14 @@ import { apiFetch, apiUrl } from '../utils/api';
 const LorryDataContext = createContext(undefined);
 
 const LOCAL_CACHE_KEY = 'fleetgate_cached_movements';
+const LOCAL_TEAMS_KEY = 'fleetgate_cached_teams';
+
+const INITIAL_TEAMS = [
+  { id: 'team-1', name: 'Team 1', members: 'Saravanan & Muthuraj', is_active: true },
+  { id: 'team-2', name: 'Team 2', members: 'Murugan & Tamil', is_active: true },
+  { id: 'team-3', name: 'Team 3', members: 'Unassigned', is_active: false },
+  { id: 'team-4', name: 'Team 4', members: 'Unassigned', is_active: false },
+];
 
 export const LorryDataProvider = ({ children }) => {
   const { profile, isAdmin, authToken } = useAuth();
@@ -23,6 +31,18 @@ export const LorryDataProvider = ({ children }) => {
     }
   });
 
+  // Primary shared teams state (configured with Team 1 & 2 enabled, Team 3 & 4 disabled)
+  const [teams, setTeams] = useState(() => {
+    try {
+      const cached = localStorage.getItem(LOCAL_TEAMS_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return INITIAL_TEAMS;
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState('live'); // 'live' | 'syncing' | 'offline' | 'error'
@@ -34,6 +54,12 @@ export const LorryDataProvider = ({ children }) => {
       localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(movements));
     } catch (_) {}
   }, [movements]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_TEAMS_KEY, JSON.stringify(teams));
+    } catch (_) {}
+  }, [teams]);
 
   // ============================================================================
   // SHARED CLOUD FETCH & SYNC
@@ -62,6 +88,8 @@ export const LorryDataProvider = ({ children }) => {
               remarks: m.remarks || m.entry_notes || '',
               entry_notes: m.remarks || m.entry_notes || '',
               exit_notes: m.exit_remarks || m.exit_notes || '',
+              team_name: m.team_name || m.team || '',
+              team_id: m.team_id || '',
               plate_number: rawPlate,
               vehicle_number: rawPlate,
               is_active_inside: Boolean(isInside),
@@ -72,6 +100,18 @@ export const LorryDataProvider = ({ children }) => {
           setMovements(normalized);
           setSyncStatus('live');
           setLastSyncTime(new Date());
+
+          // Fetch shared teams
+          try {
+            const resTeams = await apiFetch('/api/teams');
+            if (resTeams.ok) {
+              const dTeams = await resTeams.json();
+              if (dTeams.success && Array.isArray(dTeams.teams) && dTeams.teams.length > 0) {
+                setTeams(dTeams.teams);
+              }
+            }
+          } catch (_) {}
+
           setIsSyncing(false);
           return;
         }
@@ -269,6 +309,9 @@ export const LorryDataProvider = ({ children }) => {
           vehicle_number: normPlate,
           vehicleNumber: normPlate,
           remarks: (data.remarks || data.entryNotes || '').trim(),
+          team: (data.team || data.team_name || '').trim(),
+          team_name: (data.team_name || data.team || '').trim(),
+          team_id: data.team_id || '',
           entryTime: data.entryTime,
           created_by: profile?.full_name || 'Staff'
         })
@@ -424,6 +467,89 @@ export const LorryDataProvider = ({ children }) => {
     }
   };
 
+  // ============================================================================
+  // TEAM MANAGEMENT (Add, Edit, Delete, Toggle Enable/Disable)
+  // ============================================================================
+  const addTeam = async (teamData) => {
+    const name = (teamData.name || '').trim();
+    if (!name) return { success: false, error: 'Team name is required.' };
+    const members = (teamData.members || '').trim() || 'Unassigned';
+    const isActive = teamData.is_active !== undefined ? Boolean(teamData.is_active) : (teamData.isActive !== undefined ? Boolean(teamData.isActive) : true);
+
+    const tempId = `team-${Date.now()}`;
+    const newTeamObj = {
+      id: tempId,
+      name,
+      members,
+      is_active: isActive,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    setTeams(prev => [...prev, newTeamObj]);
+
+    try {
+      const res = await apiFetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, members, is_active: isActive })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.team) {
+        setTeams(prev => prev.map(t => t.id === tempId ? data.team : t));
+        return { success: true, team: data.team };
+      }
+    } catch (_) {}
+
+    return { success: true, team: newTeamObj };
+  };
+
+  const updateTeam = async (id, updateData) => {
+    setTeams(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          ...(updateData.name ? { name: updateData.name.trim() } : {}),
+          ...(updateData.members !== undefined ? { members: updateData.members.trim() } : {}),
+          ...(updateData.is_active !== undefined ? { is_active: Boolean(updateData.is_active) } : {}),
+          ...(updateData.isActive !== undefined ? { is_active: Boolean(updateData.isActive) } : {}),
+          updated_at: new Date().toISOString()
+        };
+      }
+      return t;
+    }));
+
+    try {
+      const res = await apiFetch(`/api/teams/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.team) {
+        setTeams(prev => prev.map(t => t.id === id ? data.team : t));
+        return { success: true, team: data.team };
+      }
+    } catch (_) {}
+
+    return { success: true };
+  };
+
+  const deleteTeam = async (id) => {
+    setTeams(prev => prev.filter(t => t.id !== id));
+    try {
+      await apiFetch(`/api/teams/${id}`, { method: 'DELETE' });
+    } catch (_) {}
+    return { success: true };
+  };
+
+  const toggleTeamStatus = async (id) => {
+    const existing = teams.find(t => t.id === id);
+    if (!existing) return { success: false, error: 'Team not found' };
+    const nextStatus = !existing.is_active;
+    return await updateTeam(id, { is_active: nextStatus });
+  };
+
   // Lorries mock list for directory fallback
   const lorries = useMemo(() => {
     const map = new Map();
@@ -447,6 +573,7 @@ export const LorryDataProvider = ({ children }) => {
         movements,
         activeLorries,
         lorries,
+        teams,
         stats,
         isLoading,
         isSyncing,
@@ -460,7 +587,11 @@ export const LorryDataProvider = ({ children }) => {
         updateMovement,
         deleteMovement,
         clearDailyData,
-        resetAllRecords
+        resetAllRecords,
+        addTeam,
+        updateTeam,
+        deleteTeam,
+        toggleTeamStatus
       }}
     >
       {children}

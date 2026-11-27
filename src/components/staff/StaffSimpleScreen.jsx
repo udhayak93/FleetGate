@@ -5,7 +5,8 @@ import { format, isToday } from 'date-fns';
 import { formatLorryNumber, formatStrictLorryNumber, isValidLorryNumber, getTripLabel, getTripBadgeStyle } from '../../utils/vehicleFormatter';
 import { 
   Lock, Shield, X, Eye, EyeOff, RefreshCw, CheckCircle2, Search, 
-  FileText, Download, Calendar, TrendingUp, Truck, ChevronLeft, ChevronRight, History 
+  FileText, Download, Calendar, TrendingUp, Truck, ChevronLeft, ChevronRight, History,
+  Users, ArrowDownRight, ArrowUpRight
 } from 'lucide-react';
 import { TipperTruckIcon } from '../common/TipperTruckIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -15,6 +16,8 @@ import { generateDailyReportPDF } from '../../utils/pdfGenerator';
 export const StaffSimpleScreen = () => {
   const { 
     movements, 
+    activeLorries = [],
+    teams = [],
     checkLorryInsideStatus, 
     getLorryTripInfo, 
     recordEntry, 
@@ -27,6 +30,24 @@ export const StaffSimpleScreen = () => {
 
   const [lorryNumber, setLorryNumber] = useState('TN ');
   const [remarks, setRemarks] = useState(''); // Replaced Wheel Type with optional Remarks
+  
+  // Team Selection State (Initial: Team 1 & 2 enabled, Team 3 & 4 disabled)
+  const [selectedTeamId, setSelectedTeamId] = useState(() => {
+    try {
+      const saved = localStorage.getItem('fleetgate_active_team');
+      if (saved) return saved;
+    } catch (_) {}
+    return 'team-1';
+  });
+
+  const activeTeam = useMemo(() => {
+    return teams.find(t => t.id === selectedTeamId) || teams.find(t => t.is_active) || teams[0];
+  }, [teams, selectedTeamId]);
+
+  // Quick OUT Picker Modal State
+  const [isQuickOutPickerOpen, setIsQuickOutPickerOpen] = useState(false);
+  const [quickOutSearch, setQuickOutSearch] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [lastSavedInTime, setLastSavedInTime] = useState(null);
@@ -256,6 +277,9 @@ export const StaffSimpleScreen = () => {
       vehicleType: '12 Wheel',
       remarks: remarks.trim(),
       entryNotes: remarks.trim(),
+      team: activeTeam ? activeTeam.name : 'Team 1',
+      team_name: activeTeam ? `${activeTeam.name}: ${activeTeam.members}` : 'Team 1: Saravanan & Muthuraj',
+      team_id: activeTeam?.id || selectedTeamId,
       entryTime: exactMobileIso
     });
     setIsSubmitting(false);
@@ -268,7 +292,8 @@ export const StaffSimpleScreen = () => {
         time: exactFormattedTime,
         tripLabel: intendedTripLabel,
         isSecondPlusTrip: intendedTripNumber > 1,
-        remarks: remarks.trim()
+        remarks: remarks.trim(),
+        teamName: activeTeam ? activeTeam.name : 'Team 1'
       });
       setLorryNumber('TN ');
       setRemarks('');
@@ -438,11 +463,11 @@ export const StaffSimpleScreen = () => {
           </div>
         )}
 
-        {/* LORRY ENTRY FORM: LORRY NUMBER, REMARKS (OPTIONAL), AND IN BUTTON */}
+        {/* LORRY ENTRY FORM: LORRY NUMBER, DUTY TEAM, REMARKS, AND IN / OUT ACTIONS */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-colors">
           <form onSubmit={handleRecordIn} className="space-y-4">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
               
               {/* Field 1: Lorry Number with Auto-Spacing (e.g. TN 21 BV 1234 or TN 21 H 1234) */}
               <div>
@@ -525,12 +550,60 @@ export const StaffSimpleScreen = () => {
                 {/* DUPLICATE ACTIVE IN NOTICE */}
                 {isValidPlate && duplicateCheck.isInside && (
                   <div className="mt-2 bg-rose-50 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-500/60 rounded-xl px-3 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
-                    ⚠️ Already Inside: Lorry {lorryNumber} is currently inside. Tap <strong>OUT</strong> below before recording next trip.
+                    ⚠️ Already Inside: Lorry {lorryNumber} is currently inside. Tap <strong>RECORD OUT</strong> on the right to complete visit.
                   </div>
                 )}
               </div>
 
-              {/* Field 2: Remarks (Replaced Wheel Type – Optional for check-in) */}
+              {/* Field 2: Team Selection Dropdown (Placed next to OUT section) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                    <Users className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Duty Team</span>
+                  </label>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Gate Shift</span>
+                  </span>
+                </div>
+
+                <select
+                  value={selectedTeamId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedTeamId(val);
+                    try { localStorage.setItem('fleetgate_active_team', val); } catch {}
+                  }}
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-xs transition-colors cursor-pointer"
+                >
+                  {teams.map(t => (
+                    <option
+                      key={t.id}
+                      value={t.id}
+                      disabled={!t.is_active}
+                      className={!t.is_active ? 'text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-900 font-normal italic' : 'text-slate-900 dark:text-white font-semibold'}
+                    >
+                      {t.name} — {t.members} {!t.is_active ? '(Disabled)' : ''}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="truncate">
+                    Staff: <strong className="text-slate-800 dark:text-slate-200">{activeTeam?.members || 'Unassigned'}</strong>
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    activeTeam?.is_active 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' 
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                  }`}>
+                    {activeTeam?.is_active ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Field 3: Remarks (Optional for check-in) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -540,42 +613,73 @@ export const StaffSimpleScreen = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="e.g. Driver Kumar / Sand load / Empty (Optional)"
+                  placeholder="e.g. Driver Kumar / Sand load (Optional)"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-base font-medium text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-xs transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3.5 py-3 text-sm sm:text-base font-medium text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-xs transition-colors"
                 />
+                <div className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                  Driver or cargo notes
+                </div>
               </div>
 
             </div>
 
-            {/* IN Button - strictly requires valid format to proceed */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !isValidPlate || duplicateCheck.isInside}
-              className={`w-full py-3.5 rounded-xl text-base font-black shadow-md transition active:scale-[0.99] flex items-center justify-center space-x-2 ${
-                !isValidPlate || duplicateCheck.isInside
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700'
-                  : tripInfo.isReturning
-                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
-                    : 'bg-emerald-600 hover:bg-emerald-500 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-500 hover:dark:from-emerald-500 hover:dark:to-emerald-400 text-white shadow-emerald-600/20 dark:shadow-emerald-950/60'
-              }`}
-            >
-              {!isValidPlate ? (
-                <span>
-                  {lorryNumber.trim() === 'TN' || !lorryNumber.trim()
-                    ? 'IN — Enter Lorry Number'
-                    : 'IN — Complete 4-Digit Number Required'}
-                </span>
-              ) : duplicateCheck.isInside ? (
-                <span>Vehicle Already Inside (Tap OUT below)</span>
-              ) : tripInfo.isReturning ? (
-                <span>IN ({getTripLabel(tripInfo.nextTripNumber)})</span>
-              ) : (
-                <span>IN</span>
-              )}
-            </button>
+            {/* ACTION SECTION: IN Action (Left) & OUT Section (Right) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Left Button: RECORD IN */}
+              <button
+                type="submit"
+                disabled={isSubmitting || !isValidPlate || duplicateCheck.isInside}
+                className={`w-full py-4 px-4 rounded-xl font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg transition-all transform active:scale-98 ${
+                  !isValidPlate || duplicateCheck.isInside
+                    ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
+                    : tripInfo.isReturning
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/25 ring-2 ring-amber-400/50 cursor-pointer animate-pulse'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 cursor-pointer'
+                }`}
+              >
+                <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
+                {!isValidPlate ? (
+                  <span>
+                    {lorryNumber.trim() === 'TN' || !lorryNumber.trim()
+                      ? 'IN — Enter Lorry Number'
+                      : 'IN — Complete 4-Digit Number Required'}
+                  </span>
+                ) : duplicateCheck.isInside ? (
+                  <span>Vehicle Already Inside (Tap OUT on right)</span>
+                ) : tripInfo.isReturning ? (
+                  <span>RECORD IN ({getTripLabel(tripInfo.nextTripNumber)})</span>
+                ) : (
+                  <span>RECORD IN</span>
+                )}
+              </button>
 
+              {/* Right Button / Section: OUT Section */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (duplicateCheck.isInside && duplicateCheck.movement) {
+                    handleStartRecordOut(duplicateCheck.movement);
+                  } else {
+                    setIsQuickOutPickerOpen(true);
+                  }
+                }}
+                disabled={isSubmitting}
+                className={`w-full py-4 px-4 rounded-xl font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg transition-all transform active:scale-98 cursor-pointer ${
+                  duplicateCheck.isInside
+                    ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/30 ring-2 ring-sky-400 animate-pulse'
+                    : 'bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 shadow-slate-900/30'
+                }`}
+              >
+                <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
+                {duplicateCheck.isInside ? (
+                  <span>RECORD OUT — {lorryNumber} (Ready to Exit)</span>
+                ) : (
+                  <span>RECORD OUT ({activeLorries.length} Inside)</span>
+                )}
+              </button>
+            </div>
           </form>
         </div>
 
@@ -947,6 +1051,7 @@ export const StaffSimpleScreen = () => {
               <thead className="sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur-xs shadow-xs">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
                   <th className="py-3 px-3 sm:px-4">Lorry Number</th>
+                  <th className="py-3 px-3 sm:px-4">Duty Team</th>
                   <th className="py-3 px-3 sm:px-4">Remarks</th>
                   <th className="py-3 px-3 sm:px-4">IN Time</th>
                   <th className="py-3 px-3 sm:px-4">OUT Time</th>
@@ -955,7 +1060,7 @@ export const StaffSimpleScreen = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {displayedMovements.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-normal">
+                    <td colSpan={5} className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-normal">
                       {searchQuery && searchQuery.trim() ? (
                         <div className="space-y-1.5">
                           <p>
@@ -1029,6 +1134,17 @@ export const StaffSimpleScreen = () => {
                               {tripLabel}
                             </span>
                           </div>
+                        </td>
+
+                        {/* Duty Team */}
+                        <td className="py-3.5 px-3 sm:px-4 text-xs whitespace-nowrap">
+                          {mov.team_name || mov.team ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              {mov.team_name || mov.team}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-600 font-mono text-xs">-</span>
+                          )}
                         </td>
 
                         {/* Remarks (Entry & Exit Notes) */}
@@ -1249,6 +1365,90 @@ export const StaffSimpleScreen = () => {
         </div>
 
       </main>
+
+            {/* ================= MODAL: QUICK OUT PICKER ================= */}
+      {isQuickOutPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2">
+                <span className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                  <ArrowUpRight className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Record Vehicle OUT</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {activeLorries.length} vehicle{activeLorries.length === 1 ? '' : 's'} currently inside facility
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsQuickOutPickerOpen(false);
+                  setQuickOutSearch('');
+                }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {activeLorries.length > 3 && (
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by plate number..."
+                  value={quickOutSearch}
+                  onChange={(e) => setQuickOutSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+            )}
+
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+              {activeLorries.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No vehicles are currently inside.
+                </div>
+              ) : (
+                activeLorries
+                  .filter(m => !quickOutSearch.trim() || (m.plate_number || '').toLowerCase().includes(quickOutSearch.toLowerCase().replace(/\s+/g, '')))
+                  .map(mov => (
+                    <div
+                      key={mov.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:border-sky-400 transition"
+                    >
+                      <div>
+                        <div className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+                          {mov.plate_number}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2 mt-0.5">
+                          <span>IN: {formatTime(mov.entry_time)}</span>
+                          {mov.team_name && (
+                            <span className="text-blue-600 dark:text-blue-400 font-semibold">• {mov.team_name}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsQuickOutPickerOpen(false);
+                          setQuickOutSearch('');
+                          handleStartRecordOut(mov);
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-xs transition active:scale-95 flex items-center space-x-1 cursor-pointer"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                        <span>OUT</span>
+                      </button>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================= MODAL: RECORD OUT ================= */}
       {exitModalMovement && (
