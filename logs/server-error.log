@@ -1,0 +1,426 @@
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+Fatal startup error: Error: querySrv ECONNREFUSED _mongodb._tcp.todocluster.ae0cziu.mongodb.net
+    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:296:17) {
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp.todocluster.ae0cziu.mongodb.net'
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 330,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:314:44)
+      at Object.onceWrapper (node:events:631:12)
+      at TLSSocket.emit (node:events:509:20)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: Error: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26) {
+      errno: -3008,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net'
+    }
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 330,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:314:44)
+      at Object.onceWrapper (node:events:631:12)
+      at TLSSocket.emit (node:events:509:20)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: Error: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26) {
+      errno: -3008,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net'
+    }
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 330,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:314:44)
+      at Object.onceWrapper (node:events:631:12)
+      at TLSSocket.emit (node:events:509:20)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: Error: getaddrinfo ENOTFOUND ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26) {
+      errno: -3008,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net'
+    }
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: Socket 'secureConnect' timed out after 3701263ms (connectTimeoutMS: 30000)
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 336,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkTimeoutError: Socket 'secureConnect' timed out after 3701263ms (connectTimeoutMS: 30000)
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:316:20)
+      at Object.onceWrapper (node:events:630:28)
+      at TLSSocket.emit (node:events:509:20)
+      at Socket._onTimeout (node:net:740:8)
+      at Timeout.onStreamTimeout (node:internal/stream_base_commons:237:10)
+      at listOnTimeout (node:internal/timers:637:11)
+      at process.processTimers (node:internal/timers:571:7) {
+    errorLabelSet: Set(4) {
+      'SystemOverloadedError',
+      'RetryableError',
+      'ResetPool',
+      'InterruptInUseConnections'
+    },
+    beforeHandshake: false,
+    [cause]: undefined
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: Socket 'secureConnect' timed out after 215186ms (connectTimeoutMS: 30000)
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 336,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkTimeoutError: Socket 'secureConnect' timed out after 215186ms (connectTimeoutMS: 30000)
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:316:20)
+      at Object.onceWrapper (node:events:630:28)
+      at TLSSocket.emit (node:events:509:20)
+      at Socket._onTimeout (node:net:740:8)
+      at Timeout.onStreamTimeout (node:internal/stream_base_commons:237:10)
+      at listOnTimeout (node:internal/timers:637:11)
+      at process.processTimers (node:internal/timers:571:7) {
+    errorLabelSet: Set(4) {
+      'SystemOverloadedError',
+      'RetryableError',
+      'ResetPool',
+      'InterruptInUseConnections'
+    },
+    beforeHandshake: false,
+    [cause]: undefined
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: Socket 'secureConnect' timed out after 437014ms (connectTimeoutMS: 30000)
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 336,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkTimeoutError: Socket 'secureConnect' timed out after 437014ms (connectTimeoutMS: 30000)
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:316:20)
+      at Object.onceWrapper (node:events:630:28)
+      at TLSSocket.emit (node:events:509:20)
+      at Socket._onTimeout (node:net:740:8)
+      at Timeout.onStreamTimeout (node:internal/stream_base_commons:237:10)
+      at listOnTimeout (node:internal/timers:637:11)
+      at process.processTimers (node:internal/timers:571:7) {
+    errorLabelSet: Set(4) {
+      'SystemOverloadedError',
+      'RetryableError',
+      'ResetPool',
+      'InterruptInUseConnections'
+    },
+    beforeHandshake: false,
+    [cause]: undefined
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: Socket 'secureConnect' timed out after 116581ms (connectTimeoutMS: 30000)
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 336,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkTimeoutError: Socket 'secureConnect' timed out after 116581ms (connectTimeoutMS: 30000)
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:316:20)
+      at Object.onceWrapper (node:events:630:28)
+      at TLSSocket.emit (node:events:509:20)
+      at Socket._onTimeout (node:net:740:8)
+      at Timeout.onStreamTimeout (node:internal/stream_base_commons:237:10)
+      at listOnTimeout (node:internal/timers:637:11)
+      at process.processTimers (node:internal/timers:571:7) {
+    errorLabelSet: Set(4) {
+      'SystemOverloadedError',
+      'RetryableError',
+      'ResetPool',
+      'InterruptInUseConnections'
+    },
+    beforeHandshake: false,
+    [cause]: undefined
+  }
+}
+[Maintenance] Weekly maintenance error: MongoServerSelectionError: Socket 'secureConnect' timed out after 981594ms (connectTimeoutMS: 30000)
+    at Topology.selectServer (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/sdam/topology.js:350:38)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processTimers (node:internal/timers:568:9)
+    at async executeOperationWithRetries (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:181:18)
+    at async executeOperation (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/operations/execute_operation.js:85:16)
+    at async FindCursor._initialize (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/find_cursor.js:53:26)
+    at async FindCursor.cursorInit (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:589:27)
+    at async FindCursor.fetchBatch (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:623:13)
+    at async FindCursor.next (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:290:17)
+    at async [Symbol.asyncIterator] (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cursor/abstract_cursor.js:207:34) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-xr1dmb8-shard-00-00.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-01.ae0cziu.mongodb.net:27017' => [ServerDescription],
+      'ac-xr1dmb8-shard-00-02.ae0cziu.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-vxn9qk-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000132'),
+    maxSetVersion: 336,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkTimeoutError: Socket 'secureConnect' timed out after 981594ms (connectTimeoutMS: 30000)
+      at TLSSocket.<anonymous> (/Users/udhaya/.gemini/antigravity/scratch/lorry-track-pro/node_modules/mongodb/lib/cmap/connect.js:316:20)
+      at Object.onceWrapper (node:events:630:28)
+      at TLSSocket.emit (node:events:509:20)
+      at Socket._onTimeout (node:net:740:8)
+      at Timeout.onStreamTimeout (node:internal/stream_base_commons:237:10)
+      at listOnTimeout (node:internal/timers:637:11)
+      at process.processTimers (node:internal/timers:571:7) {
+    errorLabelSet: Set(4) {
+      'SystemOverloadedError',
+      'RetryableError',
+      'ResetPool',
+      'InterruptInUseConnections'
+    },
+    beforeHandshake: false,
+    [cause]: undefined
+  }
+}
